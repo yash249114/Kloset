@@ -306,7 +306,58 @@ func (s *Service) UpdateStatus(idStr, userID, newStatus string) (*Booking, error
 		if userRole != "admin" && booking.SellerID != userUUID {
 			return nil, errors.New("unauthorized status transition")
 		}
-		// Complete payout / transactions
+		// Complete payout / transactions — escrow release
+		// 1. Refund security deposit to renter
+		depositRefund := booking.SecurityDeposit
+		if booking.DepositRefundAmount != nil {
+			depositRefund = *booking.DepositRefundAmount
+		}
+		if depositRefund > 0 {
+			note := fmt.Sprintf("Security deposit refund for completed booking Ref: %s", booking.BookingRef)
+			depositTx := map[string]interface{}{
+				"id":         uuid.New(),
+				"user_id":    booking.RenterID,
+				"booking_id": booking.ID,
+				"type":       "deposit_refund",
+				"amount":     depositRefund,
+				"status":     "completed",
+				"note":       &note,
+			}
+			_ = s.repo.db.Table("transactions").Create(&depositTx).Error
+		}
+
+		// 2. Create seller payout (rental amount minus platform fee)
+		sellerPayout := booking.RentalAmount - booking.PlatformFee
+		if sellerPayout > 0 {
+			payoutNote := fmt.Sprintf("Seller payout for completed booking Ref: %s (Rental: %.2f - Platform Fee: %.2f)", booking.BookingRef, booking.RentalAmount, booking.PlatformFee)
+			payoutTx := map[string]interface{}{
+				"id":         uuid.New(),
+				"user_id":    booking.SellerID,
+				"booking_id": booking.ID,
+				"type":       "seller_payout",
+				"amount":     math.Round(sellerPayout*100) / 100,
+				"status":     "completed",
+				"note":       &payoutNote,
+			}
+			_ = s.repo.db.Table("transactions").Create(&payoutTx).Error
+		}
+
+		// Notify seller of payout
+		if s.notifSvc != nil {
+			_ = s.notifSvc.Create(
+				booking.SellerID.String(),
+				"seller_payout",
+				"Payout Released",
+				fmt.Sprintf("Your payout of ₹%.2f for booking %s has been released. Rental earnings minus platform fee.", sellerPayout, booking.BookingRef),
+				[]string{"in_app", "email"},
+				map[string]interface{}{
+					"ref":    booking.BookingRef,
+					"amount": sellerPayout,
+				},
+			)
+		}
+
+		log.Info().Str("ref", booking.BookingRef).Float64("seller_payout", sellerPayout).Float64("deposit_refund", depositRefund).Msg("Booking completed: escrow released")
 	case "cancelled":
 		return nil, errors.New("use the /cancel endpoint to cancel bookings")
 	default:

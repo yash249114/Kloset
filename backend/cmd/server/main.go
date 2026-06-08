@@ -89,6 +89,19 @@ func main() {
 	app.Use(middleware.CORSMiddleware(cfg.App.FrontendURL))
 	app.Use(middleware.LoggerMiddleware())
 
+	// Production security headers
+	app.Use(func(c *fiber.Ctx) error {
+		c.Set("X-Frame-Options", "DENY")
+		c.Set("X-Content-Type-Options", "nosniff")
+		c.Set("X-XSS-Protection", "1; mode=block")
+		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		if cfg.App.Env == "production" {
+			c.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
+		return c.Next()
+	})
+
 	// Rate limiting (if Redis available)
 	if rdb != nil {
 		app.Use(middleware.RateLimiter(rdb, 100, time.Minute))

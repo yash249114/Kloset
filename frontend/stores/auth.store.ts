@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('kloset_access_token', accessToken);
           localStorage.setItem('kloset_refresh_token', refreshToken);
           localStorage.setItem('kloset_user', JSON.stringify(user));
-          document.cookie = 'kloset-auth=true; path=/; max-age=604800; SameSite=Lax';
+          document.cookie = 'kloset-auth=true; path=/; max-age=604800; SameSite=Lax; Secure';
         }
         set({
           user,
@@ -88,7 +88,7 @@ export const useAuthStore = create<AuthState>()(
           const { authAPI } = await import('@/lib/api/auth');
           const user = await authAPI.me();
           if (typeof window !== 'undefined') {
-            document.cookie = 'kloset-auth=true; path=/; max-age=604800; SameSite=Lax';
+            document.cookie = 'kloset-auth=true; path=/; max-age=604800; SameSite=Lax; Secure';
           }
           set({
             user,
