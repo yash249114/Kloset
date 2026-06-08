@@ -1,0 +1,174 @@
+{
+  "timestamp": "2026-06-08T13:45:00.108Z",
+  "overallScore": 100,
+  "testsRun": 31,
+  "testsPassed": 31,
+  "journeys": {
+    "Admin Journey": [
+      {
+        "name": "Login Admin Account",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Approve Seller KYC",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Approve Outfit Listing",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Renter Raises Booking Dispute",
+        "passed": true,
+        "notes": "Dispute ID: 30e21c90-9a55-41de-9842-d1fab47d64d9"
+      },
+      {
+        "name": "Admin Resolves Dispute (Dismiss Fee)",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Google Session & OAuth Claim Verification",
+        "passed": true,
+        "notes": ""
+      }
+    ],
+    "Seller Journey": [
+      {
+        "name": "Register Seller Account",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Login Seller Account",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Submit KYC Verification",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Create Listing Form Draft",
+        "passed": true,
+        "notes": "Outfit ID: 0b0b2731-2c77-47e1-a670-9a34221d8447"
+      },
+      {
+        "name": "Submit Listing for Verification",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Edit Listing Parameters",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Verify Returned Garment & Complete Booking",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "View Received Bookings & Revenue Stats",
+        "passed": true,
+        "notes": ""
+      }
+    ],
+    "Renter Journey": [
+      {
+        "name": "Register Renter Account",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Login Renter Account",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Browse Catalog",
+        "passed": true,
+        "notes": "Picked Outfit ID: 0b0b2731-2c77-47e1-a670-9a34221d8447"
+      },
+      {
+        "name": "Add Item to Wishlist",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Add to Cart & Checkout (Draft Booking)",
+        "passed": true,
+        "notes": "Booking ID: 727262c1-2346-4b06-8c35-703bafbb9173"
+      },
+      {
+        "name": "Razorpay Payment & Signature Verification",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Track Order Detail",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Advance Lifecycle (picked_up -> in_use -> return_initiated)",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Review Outfit Rating Feedback",
+        "passed": true,
+        "notes": ""
+      }
+    ],
+    "Support Journey": [
+      {
+        "name": "Create Customer Support Ticket",
+        "passed": true,
+        "notes": "Ticket ID: TKT-9100"
+      },
+      {
+        "name": "Admin View Tickets List",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Admin Reply to Support Chat",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Admin Resolve and Close Ticket",
+        "passed": true,
+        "notes": ""
+      }
+    ],
+    "Launch Infrastructure": [
+      {
+        "name": "OTP Verification Code Dispatch",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "OTP Cooldown Enforcement (60s)",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Platform healthz & readyz check",
+        "passed": true,
+        "notes": ""
+      },
+      {
+        "name": "Retrieve Administrator Diagnostics Metrics",
+        "passed": true,
+        "notes": ""
+      }
+    ]
+  },
+  "latencies": []
+}

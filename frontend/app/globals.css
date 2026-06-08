@@ -1,0 +1,547 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════
+   KLOSET DESIGN SYSTEM
+   Luxury through restraint.
+   ═══════════════════════════════════════════ */
+
+:root {
+  /* Kloset Luxury Palette */
+  --white: #FFFFFF;
+  --kloset-dark: #181512;
+  --kloset-gold: #735c00;
+  --kloset-gold-hover: #574500;
+  --kloset-gold-light: #ffe088;
+  --kloset-bg: #faf9f6;          /* Luxurious warm bone/ivory background */
+  --kloset-border: #e8e6e1;      /* Thin elegant border */
+  --kloset-text-muted: #7a7570;
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Layout */
+  --nav-height: 70px; /* Standard elegant header height */
+  --max-width: 1400px;
+  --sidebar-width: 260px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.06);
+
+  /* Transitions */
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Backward compat variables mapped to Kloset luxury */
+  --ivory: var(--kloset-bg);
+  --warm-gray: #f2efe9;
+  --border: var(--kloset-border);
+  --border-light: var(--kloset-border);
+  --text-muted: var(--kloset-text-muted);
+  --text-light: var(--kloset-text-muted);
+  --text: var(--kloset-dark);
+  --text-dark: var(--kloset-dark);
+  --accent: var(--kloset-gold);
+  --accent-hover: var(--kloset-gold-hover);
+  --accent-light: var(--kloset-gold-light);
+  --success: #3c763d;
+  --success-light: #dff0d8;
+  --error: #a94442;
+  --error-light: #f2dede;
+
+  --bloom: var(--kloset-bg);
+  --petal: var(--kloset-border);
+  --rose: var(--kloset-gold);
+  --rose-dark: var(--kloset-gold-hover);
+  --gold: var(--kloset-gold);
+  --gold-light: var(--kloset-gold-light);
+  --sage: var(--success);
+  --sage-dark: var(--success);
+  --ink: var(--kloset-dark);
+  --ink-light: var(--kloset-text-muted);
+  --ink-lighter: var(--kloset-text-muted);
+  --ivory-warm: var(--kloset-bg);
+  --glass: rgba(255, 255, 255, 0.98);
+  --glass-border: var(--kloset-border);
+  --shadow-xl: var(--shadow-lg);
+  --shadow-gold: 0 2px 8px rgba(197, 168, 128, 0.1);
+}
+
+/* ─── Base ─────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--kloset-bg);
+  color: var(--text);
+  line-height: 1.5;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* ─── Typography ───────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+}
+
+.font-display { font-family: var(--font-display); }
+.font-body { font-family: var(--font-body); }
+
+/* ─── Scrollbar ────────────────────────────── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--kloset-bg); }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+/* ─── Selection ────────────────────────────── */
+::selection {
+  background: var(--kloset-gold-light);
+  color: var(--text-dark);
+}
+
+/* ─── Focus ────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--kloset-gold);
+  outline-offset: 1px;
+}
+
+/* ─── Container ────────────────────────────── */
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 0 16px; }
+}
+
+/* ─── Section spacing ──────────────────────── */
+.section {
+  padding: 40px 0;
+}
+
+/* ═══════════════════════════════════════════
+   BUTTONS & ALIASES
+   ═══════════════════════════════════════════ */
+
+/* Kloset Primary Luxury Button */
+.btn-primary,
+.btn-luxury-primary {
+  height: 44px;
+  padding: 0 32px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--kloset-dark);
+  border: 1px solid var(--kloset-dark);
+  color: var(--white) !important;
+  cursor: pointer;
+  transition: all 250ms var(--ease);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-primary:hover,
+.btn-luxury-primary:hover {
+  background: transparent;
+  color: var(--kloset-dark) !important;
+}
+
+/* Kloset Secondary Luxury Button */
+.btn-outline,
+.btn-luxury-secondary {
+  height: 44px;
+  padding: 0 32px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--kloset-border);
+  color: var(--kloset-dark) !important;
+  cursor: pointer;
+  transition: all 250ms var(--ease);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-outline:hover,
+.btn-luxury-secondary:hover {
+  border-color: var(--kloset-dark);
+  background: rgba(17, 17, 17, 0.02);
+}
+
+/* Kloset Accent Button (Gold) */
+.btn-gold,
+.btn-luxury-accent {
+  height: 44px;
+  padding: 0 32px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--kloset-gold);
+  border: 1px solid var(--kloset-gold);
+  color: var(--white) !important;
+  cursor: pointer;
+  transition: all 250ms var(--ease);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-gold:hover,
+.btn-luxury-accent:hover {
+  background: var(--kloset-gold-hover);
+  border-color: var(--kloset-gold-hover);
+}
+
+/* Backward compat */
+.btn-rose,
+.btn-secondary {
+  height: 48px;
+  padding: 0 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--text);
+  color: var(--white);
+  border: none;
+  cursor: pointer;
+  transition: background 200ms var(--ease);
+  white-space: nowrap;
+}
+
+.btn-rose:hover,
+.btn-secondary:hover {
+  background: var(--text-dark);
+}
+
+.btn-danger {
+  height: 48px;
+  padding: 0 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--error);
+  color: var(--white);
+  border: none;
+  cursor: pointer;
+  transition: background 200ms var(--ease);
+  white-space: nowrap;
+}
+
+.btn-danger:hover { background: #A84A4A; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-light);
+  font-weight: 500;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 200ms var(--ease), background 200ms var(--ease);
+  font-family: var(--font-body);
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-ghost:hover {
+  background: var(--warm-gray);
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════════
+   INPUTS
+   ═══════════════════════════════════════════ */
+
+.input-kloset {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  transition: border-color 200ms var(--ease);
+  outline: none;
+}
+
+.input-kloset:focus {
+  border-color: var(--accent);
+}
+
+.input-kloset::placeholder {
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   CARDS & BADGES
+   ═══════════════════════════════════════════ */
+
+.card-floral {
+  background: var(--white);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 300ms var(--ease);
+}
+
+.card-floral:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-gold {
+  background: var(--accent-light);
+  color: var(--accent-hover);
+}
+
+.badge-rose {
+  background: var(--accent-light);
+  color: var(--accent-hover);
+}
+
+.badge-sage {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+/* ═══════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════ */
+
+.price {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.price-currency {
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--warm-gray) 0%, var(--ivory) 50%, var(--warm-gray) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-luxury {
+  background: linear-gradient(90deg, var(--warm-gray) 0%, var(--ivory) 40%, var(--warm-gray) 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.gradient-overlay {
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.star-filled { color: var(--accent); }
+.star-empty { color: var(--border); }
+
+.text-gradient-rose {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes heartbeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.2); }
+  50% { transform: scale(1); }
+}
+
+.heart-pulse {
+  animation: heartbeat 0.4s ease-in-out;
+}
+
+.loader-floral-circle {
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Backward compat: glass */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+}
+
+/* Backward compat: tabs/toggles */
+.tab-luxury {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-light);
+  transition: color 200ms;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.tab-luxury:hover { color: var(--text); }
+.tab-luxury.active { color: var(--text-dark); font-weight: 600; }
+
+.toggle-luxury {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  background: var(--border);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 200ms;
+}
+
+.toggle-luxury.active { background: var(--accent); }
+
+.toggle-luxury-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--white);
+  border-radius: 50%;
+  transition: transform 200ms;
+  transform: translateX(3px);
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle-luxury.active .toggle-luxury-thumb {
+  transform: translateX(23px);
+}
+
+/* Backward compat: empty state */
+.empty-floral {
+  background: var(--white);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Backward compat: divider */
+.divider-ornate {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.divider-ornate::before,
+.divider-ornate::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Sonner Toast Overrides */
+[data-sonner-toaster] [data-sonner-toast] {
+  font-family: var(--font-body) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-md) !important;
+  border: 1px solid var(--border) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type='success'] {
+  background: var(--success-light) !important;
+  color: var(--success) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type='error'] {
+  background: var(--error-light) !important;
+  color: var(--error) !important;
+}
+
+/* ─── Mobile touch targets ─────────────────── */
+@media (max-width: 768px) {
+  .btn-gold,
+  .btn-rose,
+  .btn-outline,
+  .btn-ghost {
+    min-height: 48px;
+  }
+}
+
+/* ─── Smooth radius token ──────────────────── */
+:root {
+  --radius-card: 12px;
+}
