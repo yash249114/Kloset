@@ -26,7 +26,7 @@ func NewService(db *gorm.DB, notifSvc *notification.Service) *Service {
 }
 
 func (s *Service) CreateTicket(ticket *SupportTicket) error {
-	ticket.ID = fmt.Sprintf("TKT-%d", 1000+time.Now().UnixNano()%9000)
+	ticket.ID = fmt.Sprintf("TKT-%d", 10000000+time.Now().UnixNano()%90000000)
 	ticket.Status = "open"
 	ticket.CreatedAt = time.Now()
 

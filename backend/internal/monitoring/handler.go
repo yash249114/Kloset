@@ -128,7 +128,7 @@ func (h *Handler) Diagnostics(c *fiber.Ctx) error {
 
 	// 5. Total Error Logs Count (last 24 hours)
 	var errorLogsCount int64
-	h.db.Table("system_logs").Where("level = ? AND created_at >= ?", "error", time.Now().Add(-24*time.Hour)).Count(&errorLogsCount)
+	h.db.Table("system_logs").Where("severity = ? AND timestamp >= ?", "error", time.Now().Add(-24*time.Hour)).Count(&errorLogsCount)
 
 	return response.Success(c, "Platform diagnostics gathered", fiber.Map{
 		"database_stats":     dbStats,

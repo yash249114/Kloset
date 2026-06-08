@@ -525,7 +525,7 @@ async function runE2E() {
   }
 
   // 2. OTP Cooldown and Rate Limiting Check
-  const otpPhone = '+919988776655';
+  const otpPhone = '+91' + String(timestamp + 2).slice(-10);
   const otpSend1 = await request('/auth/otp/send', 'POST', { phone: otpPhone });
   if (otpSend1.ok && otpSend1.data.success) {
     logTest('Launch Infrastructure', 'OTP Verification Code Dispatch', true);
