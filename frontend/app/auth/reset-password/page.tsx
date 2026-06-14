@@ -74,10 +74,11 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="min-h-screen bg-ivory flex font-sans text-charcoal select-none">
-      <div className="hidden lg:block w-1/2 relative overflow-hidden bg-charcoal">
+    <div className="flex min-h-screen bg-ivory font-sans text-charcoal select-none">
+      {/* LEFT: Editorial Image — 50vw, cover, full height */}
+      <div className="hidden lg:block w-[50vw] relative overflow-hidden bg-charcoal">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-75"
+          className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1597983073493-88cd35cf93b0?auto=format&fit=crop&w=1920&q=80')`,
           }}
@@ -96,12 +97,13 @@ function ResetPasswordForm() {
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+      {/* RIGHT: Auth Panel — 50vw, vertically + horizontally centered */}
+      <div className="w-[50vw] flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={springTransition}
-          className="w-full max-w-md mx-auto"
+          className="w-full min-w-[440px] max-w-[520px] px-6"
         >
           <div className="text-center mb-10">
             <Link href="/" className="inline-flex items-center gap-1">
@@ -112,7 +114,7 @@ function ResetPasswordForm() {
 
           <div className="bg-white border border-border rounded-2xl p-8 shadow-sm">
             <div className="text-center mb-8 space-y-2">
-              <h1 className="text-2xl font-display font-medium text-charcoal">Set New Password</h1>
+              <h1 className="text-2xl font-display font-medium text-charcoal whitespace-nowrap">Set New Password</h1>
               <p className="text-xs text-charcoal-light font-light">
                 {email ? `Reset for ${email}` : 'Enter the reset token from your email'}
               </p>
@@ -129,7 +131,7 @@ function ResetPasswordForm() {
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     placeholder="Enter the reset token from your email"
-                    className="w-full h-[52px] pl-12 pr-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
+                    className="w-full h-14 pl-12 pr-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
                     required
                   />
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal-light" size={16} />
@@ -146,7 +148,7 @@ function ResetPasswordForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="At least 8 characters"
-                    className="w-full h-[52px] pl-12 pr-12 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
+                    className="w-full h-14 pl-12 pr-12 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
                     required
                     minLength={8}
                   />
@@ -171,7 +173,7 @@ function ResetPasswordForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter your new password"
-                    className="w-full h-[52px] pl-12 pr-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
+                    className="w-full h-14 pl-12 pr-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
                     required
                     minLength={8}
                   />
@@ -183,7 +185,7 @@ function ResetPasswordForm() {
                 type="submit"
                 variant="primary"
                 isLoading={loading}
-                className="w-full h-[52px] cursor-pointer"
+                className="w-full h-14 cursor-pointer"
               >
                 <ArrowRight size={16} className="mr-2" /> Reset Password
               </Button>

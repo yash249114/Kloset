@@ -48,13 +48,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 3. Auth Page layout (Standalone clean viewport)
+  // 3. Auth Page layout (Standalone clean viewport — no centering wrapper, auth pages handle their own 50/50 split)
   if (isAuthRoute) {
     return (
-      <div className="min-h-screen bg-ivory text-charcoal flex flex-col justify-center items-center font-sans">
+      <>
         {children}
         <Toast />
-      </div>
+      </>
     );
   }
 

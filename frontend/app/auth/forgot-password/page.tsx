@@ -35,11 +35,11 @@ function ForgotPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen bg-ivory flex font-sans text-charcoal select-none">
-      {/* LEFT: Luxury Image */}
-      <div className="hidden lg:block w-1/2 relative overflow-hidden bg-charcoal">
+    <div className="flex min-h-screen bg-ivory font-sans text-charcoal select-none">
+      {/* LEFT: Editorial Image — 50vw, cover, full height */}
+      <div className="hidden lg:block w-[50vw] relative overflow-hidden bg-charcoal">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-75"
+          className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1920&q=80')`,
           }}
@@ -63,13 +63,13 @@ function ForgotPasswordForm() {
         </div>
       </div>
 
-      {/* RIGHT: Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+      {/* RIGHT: Auth Panel — 50vw, vertically + horizontally centered */}
+      <div className="w-[50vw] flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={springTransition}
-          className="w-full max-w-md mx-auto"
+          className="w-full min-w-[440px] max-w-[520px] px-6"
         >
           {/* Logo */}
           <div className="text-center mb-10">
@@ -81,7 +81,7 @@ function ForgotPasswordForm() {
 
           <div className="bg-white border border-border rounded-2xl p-8 shadow-sm">
             <div className="text-center mb-8 space-y-2">
-              <h1 className="text-2xl font-display font-medium text-charcoal">Forgot Password?</h1>
+              <h1 className="text-2xl font-display font-medium text-charcoal whitespace-nowrap">Forgot Password?</h1>
               <p className="text-xs text-charcoal-light font-light">Enter your email to receive a reset link</p>
             </div>
 
@@ -96,7 +96,7 @@ function ForgotPasswordForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full h-[52px] pl-12 pr-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
+                    className="w-full h-14 pl-12 pr-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
                     required
                   />
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal-light" size={16} />
@@ -107,7 +107,7 @@ function ForgotPasswordForm() {
                 type="submit"
                 variant="primary"
                 isLoading={loading}
-                className="w-full h-[52px] cursor-pointer"
+                className="w-full h-14 cursor-pointer"
               >
                 <ArrowRight size={16} className="mr-2" /> Send Reset Link
               </Button>
