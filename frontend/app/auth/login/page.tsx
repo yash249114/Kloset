@@ -195,7 +195,7 @@ function AuthLoginForm() {
                   <input type="checkbox" className="w-3.5 h-3.5 accent-champagne" />
                   Remember me
                 </label>
-                <Link href="/support" className="text-champagne hover:text-charcoal transition-colors font-bold">
+                <Link href="/auth/forgot-password" className="text-champagne hover:text-charcoal transition-colors font-bold">
                   Forgot Password?
                 </Link>
               </div>

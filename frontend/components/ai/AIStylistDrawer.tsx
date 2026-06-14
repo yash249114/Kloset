@@ -123,7 +123,7 @@ export default function AIStylistDrawer() {
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
       title="AI Stylist Consultation"
-      zIndex={Z_INDEX.AI_DRAWER}
+      zIndex={Z_INDEX.DRAWER}
       maxWidth="480px"
     >
       <div className="flex flex-col h-[calc(100vh-160px)] font-sans select-none text-charcoal">

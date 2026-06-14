@@ -75,7 +75,7 @@ export default function CartDrawer() {
       isOpen={cartOpen}
       onClose={() => setCartOpen(false)}
       title="Shopping Cart"
-      zIndex={Z_INDEX.CART_DRAWER}
+      zIndex={Z_INDEX.DRAWER}
       maxWidth="480px"
     >
       <div className="flex flex-col h-full font-sans select-none text-charcoal">

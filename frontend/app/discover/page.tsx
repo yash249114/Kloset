@@ -460,7 +460,7 @@ function DiscoverContent() {
       {/* Mobile Drawer (Portal overlay) */}
       <AnimatePresence>
         {mobileFiltersOpen && (
-          <div className="fixed inset-0 lg:hidden" style={{ zIndex: Z_INDEX.MOBILE_FILTERS }}>
+          <div className="fixed inset-0 lg:hidden" style={{ zIndex: Z_INDEX.FILTERS }}>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.5 }}

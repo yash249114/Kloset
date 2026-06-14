@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Z_INDEX } from '@/lib/constants';
-import { lockScroll, unlockScroll } from '@/lib/scroll-lock';
+import { useUIStore } from '@/store/useUIStore';
 
 export interface DrawerProps {
   isOpen: boolean;
@@ -21,10 +21,11 @@ export default function Drawer({
   onClose,
   title,
   children,
-  zIndex = Z_INDEX.CART_DRAWER,
+  zIndex = Z_INDEX.DRAWER,
   maxWidth = '480px',
 }: DrawerProps) {
   const [mounted, setMounted] = useState(false);
+  const { registerOverlay, unregisterOverlay } = useUIStore();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -35,14 +36,14 @@ export default function Drawer({
 
   useEffect(() => {
     if (isOpen) {
-      lockScroll();
+      registerOverlay();
     } else {
-      unlockScroll();
+      unregisterOverlay();
     }
     return () => {
-      if (isOpen) unlockScroll();
+      if (isOpen) unregisterOverlay();
     };
-  }, [isOpen]);
+  }, [isOpen, registerOverlay, unregisterOverlay]);
 
   if (!mounted) return null;
 

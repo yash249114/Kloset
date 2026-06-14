@@ -94,7 +94,7 @@ client.interceptors.response.use(
           const protectedPaths = ['/dashboard', '/seller', '/admin', '/booking', '/outfit/new'];
           const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
           if (isProtected) {
-            window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
+            window.location.href = `/auth/login?redirect=${encodeURIComponent(pathname)}`;
           } else if (hasAccessToken) {
             window.location.reload();
           }
@@ -132,7 +132,7 @@ client.interceptors.response.use(
           const protectedPaths = ['/dashboard', '/seller', '/admin', '/booking', '/outfit/new'];
           const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
           if (isProtected) {
-            window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
+            window.location.href = `/auth/login?redirect=${encodeURIComponent(pathname)}`;
           } else if (hasAccessToken) {
             window.location.reload();
           }
@@ -178,6 +178,14 @@ export const authAPI = {
   me: async (): Promise<User> => {
     const { data } = await client.get<APIResponse<User>>('/auth/me');
     return data.data!;
+  },
+
+  forgotPassword: async (email: string): Promise<void> => {
+    await client.post('/auth/forgot-password', { email });
+  },
+
+  resetPassword: async (token: string, password: string): Promise<void> => {
+    await client.post('/auth/reset-password', { token, password });
   },
 };
 
@@ -484,6 +492,19 @@ export const adminAPI = {
     return data.data!;
   },
 
+  getBookings: async (page = 1, perPage = 20, status?: string): Promise<{ bookings: Booking[]; meta: PaginationMeta }> => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    if (status) params.set('status', status);
+    const { data } = await client.get<APIResponse<Booking[]>>(`/admin/bookings?${params}`);
+    return { bookings: data.data || [], meta: data.meta || { page, per_page: perPage, total: 0, total_pages: 0 } };
+  },
+
+  getPaymentTransactions: async (page = 1, perPage = 20): Promise<{ transactions: AdminTransactionEntry[]; meta: PaginationMeta }> => {
+    const params = new URLSearchParams({ page: page.toString(), per_page: perPage.toString() });
+    const { data } = await client.get<APIResponse<AdminTransactionEntry[]>>(`/admin/payments?${params}`);
+    return { transactions: data.data || [], meta: data.meta || { page, per_page: perPage, total: 0, total_pages: 0 } };
+  },
+
   getKYCQueue: async (): Promise<AdminKYCUser[]> => {
     const { data } = await client.get<APIResponse<AdminKYCUser[]>>('/admin/kyc');
     return data.data || [];
@@ -666,6 +687,40 @@ export const supportAPI = {
   addAgentReply: async (id: string, text: string) => {
     const res = await client.post(`/admin/support/tickets/${id}/reply`, { text });
     return res.data.data;
+  },
+};
+
+// ─── MESSAGING ENDPOINTS ──────────────────────────────
+export interface Conversation {
+  id: string;
+  participant_name: string;
+  participant_avatar: string | null;
+  last_message: string;
+  last_message_time: string;
+  unread_count: number;
+}
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  text: string;
+  created_at: string;
+}
+
+export const messagingAPI = {
+  getConversations: async (): Promise<Conversation[]> => {
+    const { data } = await client.get<APIResponse<Conversation[]>>('/messages/conversations');
+    return data.data || [];
+  },
+
+  getMessages: async (conversationId: string): Promise<Message[]> => {
+    const { data } = await client.get<APIResponse<Message[]>>(`/messages/conversations/${conversationId}`);
+    return data.data || [];
+  },
+
+  sendMessage: async (conversationId: string, text: string): Promise<void> => {
+    await client.post(`/messages/conversations/${conversationId}`, { text });
   },
 };
 

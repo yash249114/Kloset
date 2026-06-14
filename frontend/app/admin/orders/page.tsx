@@ -2,20 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Search, ChevronRight, RefreshCcw, Eye } from 'lucide-react';
+import { Search, RefreshCcw, Eye } from 'lucide-react';
 import { adminAPI } from '@/lib/api';
+import type { Booking } from '@/types';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadOrders = async () => {
-    setLoading(true);
+  const loadOrders = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const resp = await adminAPI.getStats();
-      setOrders([]);
+      const resp = await adminAPI.getBookings(1, 50);
+      setOrders(resp.bookings || []);
     } catch {
       setOrders([]);
     } finally {
@@ -39,7 +40,7 @@ export default function AdminOrdersPage() {
           <span className="text-[10px] font-mono tracking-[0.25em] text-[#C9A96E] uppercase font-bold block">Operations</span>
           <h1 className="text-3xl md:text-4xl font-display font-medium text-[#E8E8E8] mt-1">All Orders</h1>
         </div>
-        <button onClick={loadOrders}
+        <button onClick={() => loadOrders(true)}
           className="h-10 px-4 border border-[#2A2A2A] hover:bg-[#1A1A1A] text-[#C9A96E] rounded flex items-center gap-1.5 transition-colors cursor-pointer text-xs font-mono uppercase font-bold"
         >
           <RefreshCcw size={12} /> Refresh
@@ -73,7 +74,7 @@ export default function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2A2A2A]/60">
-              {orders.map((order: any) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-[#1A1A1A] transition-colors">
                   <td className="py-4 font-mono font-bold text-[#E8E8E8]">{order.booking_ref}</td>
                   <td className="py-4 text-[#8C8C8C]">{order.renter?.name || 'N/A'}</td>
