@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquare, Search, Send, ChevronRight, Clock } from 'lucide-react';
+import { MessageSquare, Search, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';

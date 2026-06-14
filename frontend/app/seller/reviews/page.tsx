@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Star, ThumbsUp, MessageSquare, ChevronRight } from 'lucide-react';
+import { Star, MessageSquare } from 'lucide-react';
 import { reviewsAPI } from '@/lib/api';
 import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
 
 export default function SellerReviewsPage() {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -17,7 +16,7 @@ export default function SellerReviewsPage() {
       setLoading(true);
       try {
         const resp = await reviewsAPI.listAll();
-        setReviews(resp.reviews || []);
+        setReviews(resp || []);
       } catch {
         setReviews([]);
       } finally {
