@@ -1,622 +1,888 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft,
-  ChevronRight,
-  Star,
-  ChevronRight as AccordionIcon,
-  UserCheck,
-  CheckCircle2,
-  Lock,
-  RotateCcw,
-  Headphones,
   Sparkles,
-  Shield,
   ArrowRight,
-  Search,
+  ChevronRight,
+  Plus,
+  Minus,
+  Star,
+  ShieldCheck,
+  Lock,
+  MapPin,
+  Mail,
 } from 'lucide-react';
-import OutfitCard from '@/components/outfit/OutfitCard';
-import { outfitsAPI } from '@/lib/api/outfits';
-import { reviewsAPI } from '@/lib/api/reviews';
-import type { Outfit, OutfitCategory } from '@/types';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useUIStore } from '@/store/useUIStore';
+import { outfitsAPI } from '@/lib/api';
+import type { Outfit } from '@/types';
+import { toast } from 'sonner';
 
-/* ─── Mock Data ────────────────────────────── */
-const trendingOutfits: Outfit[] = Array.from({ length: 8 }, (_, i) => ({
-  id: `outfit-${i + 1}`,
-  seller_id: `seller-${i + 1}`,
-  title: ['Royal Maroon Lehenga','Golden Silk Saree','Midnight Blue Anarkali','Blush Pink Sharara','Emerald Green Gown','Ivory Sherwani Set','Coral Co-Ord Set','Dusty Rose Lehenga'][i],
-  slug: `outfit-${i + 1}`,
-  description: '',
-  ai_description: null,
-  category: ['lehenga','saree','anarkali','sharara','gown','sherwani','co_ord','lehenga'][i] as OutfitCategory,
-  occasions: ['wedding','party'],
-  colors: ['red','gold'],
-  fabric: 'Silk',
-  sizes: ['S','M','L'],
-  accessories_included: [],
-  city: ['Mumbai','Delhi','Bangalore','Jaipur','Hyderabad','Chennai','Mumbai','Delhi'][i],
-  state: '',
-  price_1day: [2500,3000,1800,2200,4000,3500,1500,2800][i],
-  price_3day: null,
-  price_7day: null,
-  security_deposit: 5000,
-  delivery_available: true,
-  delivery_fee: 200,
-  status: ['active', 'active', 'rented', 'active', 'active', 'active', 'active', 'rented'][i] as any,
-  rating_avg: [4.9,4.6,4.8,4.5,4.7,4.9,4.4,4.8][i],
-  rating_count: [48,22,59,14,31,42,19,37][i],
-  view_count: 0,
-  wishlist_count: 0,
-  images: [{
-    id: `img-${i+1}`,
-    url: `https://images.unsplash.com/photo-${['1583939003579-730e3918a45a','1610030469983-398883ce42d1','1595777457583-95e059d581b8','1594463750939-ebb28c3f7a75','1566174053879-31528523f8ae','1617627143750-d86bc21e42bb','1583939003579-730e3918a45a','1610030469983-398883ce42d1'][i]}?w=400&h=500&fit=crop`,
-    is_primary: true,
-    sort_order: 0,
-  }],
-  seller: { id: `s-${i+1}`, name: ['Priya Collections','Anaya Fashion','Zara Studio','Roshni Boutique','Maya Designer','Arjun Menswear','Suhana Studio','Delhi Heritage'][i], avatar_url: null, is_verified: true, trust_score: 95 },
-  is_wishlisted: false,
-  created_at: new Date().toISOString(),
-}));
-
-const collectionsList = [
+// Mock Backup Data for Editorial Presentation
+const MOCK_TRENDING: Partial<Outfit>[] = [
   {
-    title: 'Bridal Lehengas',
-    tag: 'lehenga',
-    img: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=600&fit=crop',
-    desc: 'Intricate embroidery & heavy silks'
+    id: 'outfit-1',
+    title: 'Ivory Zardozi Lehenga',
+    price_1day: 2500,
+    security_deposit: 8000,
+    rating_avg: 4.9,
+    seller: { id: 's1', name: 'Ritu V.', avatar_url: null, is_verified: true, trust_score: 98 },
+    images: [{ id: 'img-1', url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80', is_primary: true, sort_order: 0 }],
+    category: 'lehenga',
   },
   {
-    title: 'Festive Sarees',
-    tag: 'saree',
-    img: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&h=600&fit=crop',
-    desc: 'Classic weaves & modern drapes'
+    id: 'outfit-2',
+    title: 'Crimson Banarasi Saree',
+    price_1day: 1800,
+    security_deposit: 5000,
+    rating_avg: 4.8,
+    seller: { id: 's2', name: 'Ananya S.', avatar_url: null, is_verified: true, trust_score: 95 },
+    images: [{ id: 'img-2', url: 'https://images.unsplash.com/photo-1610030469668-93535c17b6b3?auto=format&fit=crop&w=600&q=80', is_primary: true, sort_order: 0 }],
+    category: 'saree',
   },
   {
-    title: 'Royal Sherwanis',
-    tag: 'sherwani',
-    img: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&h=600&fit=crop',
-    desc: 'Heritage cuts for groomsmen'
+    id: 'outfit-3',
+    title: 'Emerald Velvet Sherwani',
+    price_1day: 3200,
+    security_deposit: 10000,
+    rating_avg: 5.0,
+    seller: { id: 's3', name: 'Kabir D.', avatar_url: null, is_verified: true, trust_score: 99 },
+    images: [{ id: 'img-3', url: 'https://images.unsplash.com/photo-1597983073493-88cd35cf93b0?auto=format&fit=crop&w=600&q=80', is_primary: true, sort_order: 0 }],
+    category: 'sherwani',
   },
   {
-    title: 'Modern Gowns',
-    tag: 'gown',
-    img: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=400&h=600&fit=crop',
-    desc: 'Flowing silhouettes for evenings'
-  }
+    id: 'outfit-4',
+    title: 'Rose Gold Anarkali Suit',
+    price_1day: 1500,
+    security_deposit: 4000,
+    rating_avg: 4.7,
+    seller: { id: 's4', name: 'Sanjana K.', avatar_url: null, is_verified: false, trust_score: 90 },
+    images: [{ id: 'img-4', url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80', is_primary: true, sort_order: 0 }],
+    category: 'anarkali',
+  },
 ];
 
-const customerReviews = [
+const MOCK_NEW: (Partial<Outfit> & { isNew: boolean })[] = [
   {
-    name: 'Mira Rajput',
-    rating: 5,
-    outfit: 'Royal Maroon Lehenga',
-    comment: 'The lehenga arrived in pristine condition, smelling fresh and fitted perfectly. It felt like wearing a brand new ₹3 Lakh outfit for just a fraction of the cost!',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop',
-    photo: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=150&h=200&fit=crop'
+    id: 'outfit-5',
+    title: 'Pastel Mint Sharara Set',
+    price_1day: 1600,
+    security_deposit: 4500,
+    rating_avg: 4.6,
+    images: [{ id: 'img-5', url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80', is_primary: true, sort_order: 0 }],
+    category: 'sharara',
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    isNew: true,
   },
   {
-    name: 'Alia Bhatt',
-    rating: 5,
-    outfit: 'Midnight Blue Anarkali',
-    comment: 'Rented this for my best friend\'s reception. Got so many compliments. Kloset has solved the "wear once and dump" problem permanently.',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    photo: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=150&h=200&fit=crop'
+    id: 'outfit-6',
+    title: 'Midnight Blue Gown',
+    price_1day: 2800,
+    security_deposit: 8000,
+    rating_avg: 4.9,
+    images: [{ id: 'img-6', url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=600&q=80', is_primary: true, sort_order: 0 }],
+    category: 'gown',
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    isNew: false,
   },
   {
-    name: 'Ranveer Singh',
-    rating: 5,
-    outfit: 'Ivory Sherwani Set',
-    comment: 'Absolutely seamless experience. Picked it up directly from the partner boutique, alterations were done on the spot. Will definitely rent again!',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    photo: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=150&h=200&fit=crop'
-  }
+    id: 'outfit-7',
+    title: 'Gold Brocade Kurta Set',
+    price_1day: 1200,
+    security_deposit: 3000,
+    rating_avg: 4.5,
+    images: [{ id: 'img-7', url: 'https://images.unsplash.com/photo-1608748010899-18f300247112?auto=format&fit=crop&w=600&q=80', is_primary: true, sort_order: 0 }],
+    category: 'kurta_set',
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    isNew: true,
+  },
+  {
+    id: 'outfit-8',
+    title: 'Floral Silk Co-Ord Set',
+    price_1day: 1100,
+    security_deposit: 2500,
+    rating_avg: 4.7,
+    images: [{ id: 'img-8', url: 'https://images.unsplash.com/photo-1618244972963-dbee1a7edc95?auto=format&fit=crop&w=600&q=80', is_primary: true, sort_order: 0 }],
+    category: 'co_ord',
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    isNew: true,
+  },
 ];
 
-const faqs = [
-  { q: 'How does renting work?', a: 'Browse outfits, select your dates and size, pay securely online. The outfit arrives dry-cleaned at your doorstep. After your event, schedule a pickup and we handle the return.' },
-  { q: 'Is dry cleaning included?', a: 'Yes. Every outfit is professionally dry-cleaned and sanitized before delivery. The cost is included in your rental fee.' },
-  { q: 'What if something gets damaged?', a: 'Minor wear is expected and covered. For significant damage, a portion of the security deposit may be retained to cover repairs. You can add damage protection during checkout.' },
-  { q: 'When do I get my deposit back?', a: 'Within 48 hours of the seller confirming the outfit was returned in good condition. The refund goes directly to your original payment method.' },
-  { q: 'How do I list my outfits?', a: 'Create a seller account, upload photos of your outfit, set your price and availability. We handle logistics, payments, and cleaning. You earn 95% of each rental.' },
+const MOCK_DESIGNERS = [
+  { name: 'Sabyasachi', logo: 'S', bg: 'bg-[#2A2A22]' },
+  { name: 'Manish Malhotra', logo: 'M', bg: 'bg-[#222A2A]' },
+  { name: 'Anita Dongre', logo: 'A', bg: 'bg-[#2A2226]' },
+  { name: 'Tarun Tahiliani', logo: 'T', bg: 'bg-[#22262A]' },
+  { name: 'Ritu Kumar', logo: 'R', bg: 'bg-[#262A22]' },
+  { name: 'Raw Mango', logo: 'RM', bg: 'bg-[#2C2C2C]' },
 ];
 
-const occasions = [
-  { name: 'Wedding', image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=600&q=80' },
-  { name: 'Reception', image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&q=80' },
-  { name: 'Festival', image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80' },
-  { name: 'Party', image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80' },
-  { name: 'Vacation', image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=600&q=80' },
-  { name: 'College Events', image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=80' },
-  { name: 'Birthday', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80' }
+const MOCK_SELLERS = [
+  { id: 's1', name: 'House of Couture', verified: true, score: 98, location: 'Mumbai', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80', rate: '97%' },
+  { id: 's2', name: 'Aura Bridal Studio', verified: true, score: 95, location: 'Delhi NCR', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80', rate: '94%' },
 ];
 
-export default function Home() {
-  const router = useRouter();
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [heroQuery, setHeroQuery] = useState('');
-  const [discoveryTab, setDiscoveryTab] = useState<'trending' | 'new' | 'most_rented' | 'recent'>('trending');
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [outfits, setOutfits] = useState<Outfit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [reviews, setReviews] = useState<any[]>(customerReviews);
+const MOCK_REVIEWS = [
+  { id: 'rev-1', author: 'Priya M.', text: 'Rented the Crimson Saree for my cousin’s wedding. The fabric was pristine, dry-cleaned beautifully, and fit perfectly. Absolutely recommend Kloset Luxe!', stars: 5, date: 'Yesterday' },
+  { id: 'rev-2', author: 'Rahul V.', text: 'First time trying rental sherwanis and the experience was top notch. The fit assistance via customer support was exact, and delivery was right on time.', stars: 5, date: '3 days ago' },
+  { id: 'rev-3', author: 'Sneha G.', text: 'The velvet lehenga was gorgeous. It looked completely new. Escrow deposit was returned to my wallet within 48 hours. Five stars!', stars: 5, date: '1 week ago' },
+];
+
+const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
+const sectionsTransition = {
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: '-100px' },
+  transition: springTransition,
+};
+
+export default function Homepage() {
+  const { isAuthenticated } = useAuthStore();
+  const setAIStylistOpen = useUIStore((s) => s.setAIStylistOpen);
+  
+  const [activeOccasion, setActiveOccasion] = useState('wedding');
+  const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({});
+
+  const [trending, setTrending] = useState<Partial<Outfit>[]>(MOCK_TRENDING);
+  const [newArrivals, setNewArrivals] = useState<(Partial<Outfit> & { isNew: boolean })[]>(MOCK_NEW);
 
   useEffect(() => {
-    async function loadReviews() {
-      try {
-        const liveReviews = await reviewsAPI.listAll(3);
-        if (liveReviews && liveReviews.length > 0) {
-          setReviews(liveReviews);
-        }
-      } catch (err) {
-        console.error('Failed to load live reviews:', err);
-      }
-    }
-    loadReviews();
-  }, []);
-
-  const scroll = (dir: 'left' | 'right') => {
-    if (!scrollRef.current) return;
-    const amount = 300;
-    scrollRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
-  };
-
-  const handleHeroSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (heroQuery.trim()) {
-      router.push(`/discover?q=${encodeURIComponent(heroQuery)}`);
-    }
-  };
-
-  useEffect(() => {
-    let active = true;
     async function loadData() {
       try {
-        setLoading(true);
-        let data: Outfit[] = [];
-        if (discoveryTab === 'trending') {
-          data = await outfitsAPI.getTrending(8);
-        } else if (discoveryTab === 'new') {
-          const res = await outfitsAPI.browse({ sort: 'newest', per_page: 8 });
-          data = res.outfits;
-        } else if (discoveryTab === 'most_rented') {
-          const res = await outfitsAPI.browse({ sort: 'popular', per_page: 8 });
-          data = res.outfits;
-        } else if (discoveryTab === 'recent') {
-          const res = await outfitsAPI.browse({ sort: 'rating', per_page: 8 });
-          data = res.outfits;
-        }
-        
-        if (active) {
-          if (!data || data.length === 0) {
-            let mockData = trendingOutfits;
-            if (discoveryTab === 'new') {
-              mockData = [...trendingOutfits].reverse();
-            } else if (discoveryTab === 'most_rented') {
-              mockData = [...trendingOutfits].sort((a, b) => b.rating_count - a.rating_count);
-            } else if (discoveryTab === 'recent') {
-              mockData = [...trendingOutfits].slice(2, 8);
-            }
-            setOutfits(mockData);
-          } else {
-            setOutfits(data);
-          }
+        const trendResp = await outfitsAPI.getTrending(4);
+        if (trendResp && trendResp.length > 0) {
+          setTrending(trendResp);
         }
       } catch (err) {
-        console.error('Failed to load home outfits:', err);
-        if (active) {
-          let mockData = trendingOutfits;
-          if (discoveryTab === 'new') {
-            mockData = [...trendingOutfits].reverse();
-          } else if (discoveryTab === 'most_rented') {
-            mockData = [...trendingOutfits].sort((a, b) => b.rating_count - a.rating_count);
-          } else if (discoveryTab === 'recent') {
-            mockData = [...trendingOutfits].slice(2, 8);
-          }
-          setOutfits(mockData);
+        console.warn('Could not load trending outfits, using fallbacks.', err);
+      }
+
+      try {
+        const discoverResp = await outfitsAPI.browse({ sort: 'newest', per_page: 4 });
+        if (discoverResp && discoverResp.outfits.length > 0) {
+          setNewArrivals(discoverResp.outfits.map((o) => ({ ...o, isNew: true })));
         }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+      } catch (err) {
+        console.warn('Could not load new arrivals, using fallbacks.', err);
       }
     }
     loadData();
-    return () => {
-      active = false;
-    };
-  }, [discoveryTab]);
+  }, []);
+
+  const occasionOutfits = useMemo(() => {
+    const items = [...MOCK_TRENDING, ...MOCK_NEW].filter(
+      (item) => item.category === (activeOccasion === 'wedding' ? 'lehenga' : activeOccasion === 'reception' ? 'saree' : activeOccasion === 'festive' ? 'anarkali' : 'sherwani')
+    );
+    return items.length > 0 ? items : MOCK_TRENDING.slice(0, 2);
+  }, [activeOccasion]);
+
+  const toggleFaq = (index: number) => {
+    setFaqOpen((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
 
   return (
-    <div className="pb-24 bg-[#faf9f6] text-[#111111] select-none">
+    <div className="bg-ivory text-charcoal min-h-screen pt-[72px]">
       
-      {/* ─── SECTION 1: Luxury Editorial Hero Banner ─── */}
-      <section className="relative w-full h-[60vh] sm:h-[75vh] md:h-[85vh] overflow-hidden bg-gray-900 mt-[70px]">
-        <Image
-          src="https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1800&h=1000&fit=crop"
-          alt="Luxury Couture Editorial"
-          fill
-          priority
-          className="object-cover object-top opacity-85"
+      {/* ────────────────── SECTION 1: HERO ────────────────── */}
+      <section className="relative h-[calc(100vh-72px)] min-h-[600px] flex items-center justify-center overflow-hidden bg-charcoal">
+        <motion.div 
+          className="absolute inset-0 bg-cover bg-center opacity-40 filter brightness-75"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1610030470216-5cf4b63ff8cd?auto=format&fit=crop&w=1920&q=80')` }}
+          whileHover={{ scale: 1.05 }}
+          transition={springTransition}
         />
         
-        {/* Soft elegant gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent z-10" />
-        
-        {/* Editorial Title Overlay */}
-        <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 sm:px-16 md:px-24 max-w-3xl text-white">
-          <span className="text-[10px] tracking-[0.35em] uppercase text-[#c5a880] font-bold mb-3">
-            sustainable luxury couture
-          </span>
-          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-normal tracking-wide leading-[1.1] mb-6">
-            Designer wardrobes. <br />Available for rent.
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-200 tracking-wider font-light leading-relaxed mb-6 max-w-lg">
-            Rent high-end designer lehengas, sarees, sherwanis, and luxury evening wear at 80% off retail value. Professional dry cleaning and delivery included.
-          </p>
+        <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-transparent z-0" />
 
-          {/* Core Search Bar Integration */}
-          <form onSubmit={handleHeroSearch} className="flex bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-1.5 w-full max-w-md mb-8">
-            <input
-              type="text"
-              placeholder="Search 'Maroon lehenga', 'Sherwani', 'Saree'..."
-              className="bg-transparent text-white placeholder-white/60 text-xs px-4 py-2.5 outline-none flex-1 font-light"
-              value={heroQuery}
-              onChange={(e) => setHeroQuery(e.target.value)}
-            />
-            <button type="submit" className="bg-white text-gray-950 hover:bg-gray-150 transition-colors px-6 rounded-lg text-xs font-semibold uppercase tracking-wider cursor-pointer">
-              Search
-            </button>
-          </form>
-
-          <div className="flex gap-4">
-            <Link
-              href="/discover"
-              className="btn-luxury-primary px-8 cursor-pointer"
-            >
-              Browse Collections
-            </Link>
-            <Link
-              href="/register?role=seller"
-              className="btn-luxury-secondary !border-white !text-white hover:!bg-white hover:!text-gray-950 px-8 cursor-pointer"
-            >
-              Earn From Your Closet
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── NEW STEPPER SECTION: Understand in 5 Seconds ─── */}
-      <section className="bg-white border-b border-[var(--kloset-border)] py-8 relative z-30 shadow-sm">
-        <div className="max-w-[1440px] mx-auto px-6">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-6 divide-y lg:divide-y-0 lg:divide-x divide-[var(--kloset-border)] text-center">
-            {[
-              { num: '01', title: 'Rent Outfit', desc: 'Select premium designer wear' },
-              { num: '02', title: 'Choose Dates', desc: 'Book for 1, 3, or 7 days' },
-              { num: '03', title: 'Pay Securely', desc: 'Secure payments via Razorpay' },
-              { num: '04', title: 'Wear & Shine', desc: 'Delivered fresh and altered' },
-              { num: '05', title: 'Easy Return', desc: 'Free doorstep pickup return' }
-            ].map((step, i) => (
-              <div key={i} className="flex-1 w-full pt-4 lg:pt-0 lg:pl-6 first:pl-0 flex flex-col items-center justify-center">
-                <div className="flex items-center gap-2.5">
-                  <span className="font-mono text-[10px] tracking-wider text-[var(--kloset-gold)] font-bold">{step.num}</span>
-                  <h4 className="font-display font-bold text-sm text-gray-900">{step.title}</h4>
-                </div>
-                <p className="text-[10px] text-gray-400 font-sans tracking-wide mt-1">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SECTION 2: Curated Category Columns ─── */}
-      <section className="max-w-[1440px] mx-auto px-6 py-20">
-        <div className="text-center max-w-xl mx-auto mb-14">
-          <span className="text-[10px] tracking-[0.25em] uppercase text-gray-400 font-bold block mb-2">curated edits</span>
-          <h2 className="font-display text-2xl sm:text-3xl font-medium tracking-wide">Popular Categories</h2>
-          <div className="h-[1px] w-12 bg-[var(--kloset-gold)] mx-auto mt-4" />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {collectionsList.map((col, idx) => (
-            <Link
-              key={idx}
-              href={`/discover?category=${col.tag}`}
-              className="group flex flex-col items-center text-center cursor-pointer"
-            >
-              <div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-50 mb-4 rounded-sm">
-                <Image
-                  src={col.img}
-                  alt={col.title}
-                  fill
-                  className="object-cover transition-all duration-700 group-hover:scale-105"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-              </div>
-              <h3 className="font-display text-lg font-semibold text-gray-900 group-hover:text-[var(--kloset-gold)] transition-colors mb-1">
-                {col.title}
-              </h3>
-              <p className="text-[11px] text-gray-400 font-medium tracking-wider uppercase">
-                {col.desc}
-              </p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── NEW SECTION: Shop By Occasion ─── */}
-      <section className="bg-[#fbfaf8] border-y border-[var(--kloset-border)] py-20">
-        <div className="max-w-[1440px] mx-auto px-6">
-          <div className="text-center max-w-xl mx-auto mb-14">
-            <span className="text-[10px] tracking-[0.25em] uppercase text-gray-400 font-bold block mb-2">occasions edit</span>
-            <h2 className="font-display text-2xl sm:text-3xl font-medium tracking-wide">Shop By Occasion</h2>
-            <div className="h-[1px] w-12 bg-[var(--kloset-gold)] mx-auto mt-4" />
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            {occasions.map((occ, index) => (
-              <Link
-                key={index}
-                href={`/discover?occasion=${occ.name.toLowerCase()}`}
-                className="group relative aspect-[3/4] overflow-hidden rounded bg-gray-100 cursor-pointer shadow-sm"
-              >
-                <img
-                  src={occ.image}
-                  alt={occ.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
-                <h3 className="absolute bottom-4 left-3 right-3 text-center text-sm font-semibold text-white tracking-wide font-display z-20">
-                  {occ.name}
-                </h3>
+        <div className="relative max-w-7xl mx-auto px-6 text-center z-10 space-y-6">
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, ...springTransition }}
+            className="text-[11px] font-mono tracking-[0.3em] uppercase text-champagne font-extrabold"
+          >
+            Luxury Heritage Wear Rentals
+          </motion.span>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, ...springTransition }}
+            className="text-5xl md:text-7.5xl font-display font-semibold text-warm-white leading-none max-w-4xl mx-auto"
+            style={{ fontSize: 'clamp(3rem, 6.5vw, 4.5rem)' }}
+          >
+            Wear Legacy,<br />Return the Rest.
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, ...springTransition }}
+            className="text-sm md:text-base text-ivory/80 font-light max-w-lg mx-auto leading-relaxed"
+          >
+            Access luxury designer wedding sets, sarees, and sherwanis for a fraction of the cost, handled with dry-cleaned precision.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, ...springTransition }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+          >
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={springTransition} className="w-full sm:w-auto">
+              <Link href="/discover" className="btn btn-gold w-full sm:w-auto px-10">
+                Browse Couture
               </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SECTION 4: Discovery Rails with Tabs ─── */}
-      <section className="max-w-[1440px] mx-auto px-6 py-20">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-4 border-b border-[var(--kloset-border)]">
-          <div className="space-y-3">
-            <span className="text-[9px] tracking-[0.25em] uppercase text-gray-400 font-bold block mb-1">selected couture</span>
-            <div className="flex flex-wrap gap-4 text-xs font-mono tracking-wider font-semibold text-gray-400">
-              {[
-                { id: 'trending' as const, label: 'Trending Outfits' },
-                { id: 'new' as const, label: 'New Arrivals' },
-                { id: 'most_rented' as const, label: 'Most Rented' },
-                { id: 'recent' as const, label: 'Recently Added' }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setDiscoveryTab(tab.id)}
-                  className={`pb-1 cursor-pointer uppercase transition-colors hover:text-gray-900 ${
-                    discoveryTab === tab.id ? 'text-gray-900 border-b-2 border-[var(--kloset-gold)] font-bold' : ''
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 self-end">
-            <button 
-              onClick={() => scroll('left')} 
-              className="p-2 border border-gray-250 hover:bg-gray-50 rounded-full cursor-pointer transition-colors"
+            </motion.div>
+            <motion.button 
+              whileHover={{ scale: 1.03 }} 
+              whileTap={{ scale: 0.97 }} 
+              transition={springTransition}
+              onClick={() => setAIStylistOpen(true)}
+              className="btn btn-outline border-warm-white text-warm-white hover:bg-warm-white hover:text-charcoal w-full sm:w-auto px-10"
             >
-              <ChevronLeft size={16} className="text-gray-700" />
-            </button>
-            <button 
-              onClick={() => scroll('right')} 
-              className="p-2 border border-gray-250 hover:bg-gray-50 rounded-full cursor-pointer transition-colors"
-            >
-              <ChevronRight size={16} className="text-gray-700" />
-            </button>
+              Consult AI Stylist
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ────────────────── SECTION 2: TRENDING RENTALS ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 max-w-7xl mx-auto px-6">
+        <div className="flex items-end justify-between mb-12">
+          <div className="text-left">
+            <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Highly Coveted</span>
+            <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal mt-1">Trending Rentals</h2>
           </div>
+          <motion.div whileHover={{ x: 3 }} transition={springTransition}>
+            <Link href="/discover?sort=popular" className="text-xs font-mono uppercase tracking-widest text-champagne hover:text-charcoal transition-colors font-bold flex items-center gap-1">
+              See All <ChevronRight size={14} />
+            </Link>
+          </motion.div>
         </div>
 
-        <div
-          ref={scrollRef}
-          className="flex gap-6 overflow-x-auto pb-4 scroll-smooth"
-          style={{ scrollbarWidth: 'none' }}
-        >
-          {loading ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex-shrink-0 w-[260px] sm:w-[300px] animate-pulse space-y-3" id={`skeleton-${i}`}>
-                <div className="w-full aspect-[3/4] bg-gray-200 rounded-sm" />
-                <div className="h-4 bg-gray-200 rounded w-2/3" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
-                <div className="h-4 bg-gray-200 rounded w-1/3" />
-              </div>
-            ))
-          ) : outfits.length === 0 ? (
-            <div className="text-center w-full py-12 text-gray-400 font-light text-sm">
-              No outfits found in this collection.
-            </div>
-          ) : (
-            outfits.map((outfit) => (
-              <div key={outfit.id} className="flex-shrink-0 w-[260px] sm:w-[300px]" id={`outfit-card-wrapper-${outfit.id}`}>
-                <OutfitCard outfit={outfit} />
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      {/* ─── NEW SECTION: Earn From Your Closet (Seller Acquisition) ─── */}
-      <section className="bg-gradient-to-br from-[#FFF8F5] to-[#f5e6e8]/40 border-y border-[var(--kloset-border)] py-20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[var(--bloom)]/20 rounded-full blur-3xl -z-10" />
-        <div className="max-w-[1440px] mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
-            {/* Text description */}
-            <div className="lg:col-span-7 space-y-6">
-              <span className="text-[10px] tracking-[0.25em] uppercase text-[var(--kloset-gold)] font-bold block">monetize wardrobe</span>
-              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-normal tracking-wide text-gray-900 leading-tight">
-                Earn From Your Closet. <br />Join as a Verified Host.
-              </h2>
-              <p className="text-sm text-gray-500 font-light leading-relaxed max-w-xl">
-                Have luxury garments sitting in your wardrobe? Share the joy of premium couture and build passive income. We manage logistics, sanitization, payments, and client care.
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4">
-                {[
-                  { title: '1. List Outfits', desc: 'Create listings & set pricing parameters' },
-                  { title: '2. Confirm Bookings', desc: 'Approve requests from verified users' },
-                  { title: '3. Keep 95% Income', desc: 'We ship & clean. You get paid directly' }
-                ].map((item, i) => (
-                  <div key={i} className="space-y-1">
-                    <h4 className="font-bold text-xs text-gray-900">{item.title}</h4>
-                    <p className="text-[10px] text-gray-400 font-light">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-6">
-                <Link
-                  href="/register?role=seller"
-                  className="btn-gold !px-8 !py-4 text-xs font-mono uppercase tracking-wider inline-flex items-center gap-2 cursor-pointer shadow-md hover:opacity-90"
-                >
-                  List Your Wardrobe <ArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-
-            {/* Premium editorial image */}
-            <div className="lg:col-span-5 relative aspect-[4/3] rounded-2xl overflow-hidden border border-[var(--petal)] shadow-lg">
-              <Image
-                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&q=80"
-                alt="Luxury closet collection"
-                fill
-                className="object-cover"
-              />
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ─── SECTION 6: Expanded Trust Indicators ─── */}
-      <section className="max-w-[1440px] mx-auto px-6 py-20">
-        <div className="text-center max-w-xl mx-auto mb-16">
-          <span className="text-[10px] tracking-[0.25em] uppercase text-gray-400 font-bold block mb-2">platform shield</span>
-          <h2 className="font-display text-2xl sm:text-3xl font-medium tracking-wide">Why Choose Kloset</h2>
-          <div className="h-[1px] w-12 bg-[var(--kloset-gold)] mx-auto mt-4" />
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-6 text-center">
-          {[
-            { icon: UserCheck, title: 'Verified Sellers', desc: '100% Host identity audits' },
-            { icon: CheckCircle2, title: 'Quality Checked', desc: '10-point inspection check' },
-            { icon: Lock, title: 'Secure Payments', desc: 'Razorpay locked escrow' },
-            { icon: RotateCcw, title: 'Easy Returns', desc: 'Free doorstep return pickup' },
-            { icon: Headphones, title: 'Client Support', desc: '24/7 client care tickets' },
-            { icon: Sparkles, title: 'Damage Protect', desc: 'Stain & zipper coverage' },
-            { icon: Shield, title: 'Rental Insurance', desc: 'Premium shipping care plan' }
-          ].map((item, i) => (
-            <div key={i} className="flex flex-col items-center bg-white p-4 rounded-xl border border-[var(--kloset-border)] shadow-sm transition-all duration-300 hover:shadow-md">
-              <div className="w-10 h-10 rounded-full bg-[var(--bloom)]/30 text-[var(--rose)] flex items-center justify-center mb-3">
-                <item.icon size={16} />
-              </div>
-              <span className="text-[10px] uppercase tracking-wider font-bold text-gray-900 block mb-1">{item.title}</span>
-              <p className="text-[9px] text-gray-400 font-light leading-normal">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── SECTION 6.5: Premium Customer Testimonials ─── */}
-      <section className="bg-white border-y border-[var(--kloset-border)] py-20 select-none">
-        <div className="max-w-[1440px] mx-auto px-6">
-          <div className="text-center max-w-xl mx-auto mb-16">
-            <span className="text-[9px] tracking-[0.25em] uppercase text-gray-400 font-bold block mb-2">community reviews</span>
-            <h2 className="font-display text-2xl sm:text-3xl font-medium tracking-wide">Loved by Renters</h2>
-            <div className="h-[1px] w-12 bg-[var(--kloset-gold)] mx-auto mt-4" />
-          </div>
-
-            {reviews.map((rev, i) => {
-              const reviewerName = rev.reviewer?.name || rev.name || 'Verified Client';
-              const reviewerAvatar = rev.reviewer?.avatar_url || rev.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop';
-              const rating = rev.rating || 5;
-              const comment = rev.comment || '';
-              const photo = rev.photo || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=150&h=200&fit=crop';
-              const outfitName = rev.outfit?.title || rev.outfit || 'Couture Rental';
-              return (
-                <div key={i} className="flex gap-4 p-5 bg-[#fbfaf8] border border-[var(--kloset-border)] rounded-2xl shadow-sm transition-all hover:shadow-md">
-                  
-                  {/* Worn outfit photo column */}
-                  <div className="relative w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 bg-gray-150 border">
-                    <img src={photo} alt={reviewerName} className="object-cover w-full h-full" />
-                    <span className="absolute bottom-1 right-1 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] text-[var(--rose-dark)] font-bold scale-90">WEAR</span>
-                  </div>
-
-                  {/* Testimonial details */}
-                  <div className="flex flex-col justify-between flex-1">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-0.5 text-[var(--kloset-gold)]">
-                        {[...Array(rating)].map((_, starIdx) => (
-                          <Star key={starIdx} size={11} fill="currentColor" />
-                        ))}
-                        <span className="badge badge-sage uppercase tracking-wider text-[7px] font-bold py-0.2 px-1 ml-1.5 flex items-center gap-0.5">
-                          ✓ verified
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-gray-600 italic leading-relaxed line-clamp-4">"{comment}"</p>
-                    </div>
-                    <div className="flex items-center gap-2 pt-2 border-t border-[var(--kloset-border)]/50">
-                      <div className="relative w-6 h-6 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
-                        <img src={reviewerAvatar} alt={reviewerName} className="object-cover w-full h-full" />
-                      </div>
-                      <div>
-                        <h4 className="text-[10px] font-bold text-gray-900">{reviewerName}</h4>
-                        <p className="text-[8px] text-gray-400 font-mono tracking-wider uppercase">Order: {outfitName}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-              );
-            })}
-        </div>
-      </section>
-
-      {/* ─── SECTION 7: FAQ Accordion ─── */}
-      <section className="max-w-[900px] mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <span className="text-[9px] tracking-[0.25em] uppercase text-gray-400 font-bold block mb-2">faq desk</span>
-          <h2 className="font-display text-2xl sm:text-3xl font-medium tracking-wide">Common Questions</h2>
-        </div>
-        
-        <div className="divide-y divide-[var(--kloset-border)] border-t border-b border-[var(--kloset-border)]">
-          {faqs.map((faq, i) => {
-            const open = openFaq === i;
+        {/* Scroll Rail */}
+        <div className="flex gap-6 overflow-x-auto pb-6 scroll-rail snap-x">
+          {trending.map((item) => {
+            const imgUrl = item.images?.[0]?.url || '/placeholder-outfit.jpg';
             return (
-              <div key={i} className="py-4.5">
-                <button
-                  onClick={() => setOpenFaq(open ? null : i)}
-                  className="w-full text-left py-4 flex justify-between items-center gap-4 cursor-pointer font-display text-[15px] font-semibold text-gray-900 hover:text-[var(--kloset-gold)] transition-colors"
-                >
-                  <span>{faq.q}</span>
-                  <AccordionIcon
-                    size={16}
-                    className={`text-gray-400 transform transition-transform duration-300 ${open ? 'rotate-90 text-[var(--kloset-gold)]' : ''}`}
+              <motion.div 
+                key={item.id} 
+                className="min-w-[280px] w-[280px] snap-start bg-white border border-border rounded-lg overflow-hidden group text-left"
+                whileHover={{ y: -8, boxShadow: '0 12px 30px rgba(0, 0, 0, 0.04)' }}
+                transition={springTransition}
+              >
+                <div className="h-[380px] relative overflow-hidden bg-ivory-dark">
+                  <motion.img 
+                    src={imgUrl} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover" 
+                    whileHover={{ scale: 1.05 }}
+                    transition={springTransition}
                   />
-                </button>
-                {open && (
-                  <p className="pb-5 text-[13px] text-gray-500 leading-relaxed font-light pl-1 animate-fade-in">
-                    {faq.a}
-                  </p>
-                )}
-              </div>
+                  
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
+                      <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase">
+                        Quick View
+                      </Link>
+                    </motion.div>
+                  </div>
+
+                  {item.rating_avg && (
+                    <span className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm border border-border/40 text-[9px] font-mono font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                      <Star size={10} className="fill-gold text-gold" /> {item.rating_avg}
+                    </span>
+                  )}
+                </div>
+                <div className="p-5 space-y-1">
+                  <span className="text-[9px] font-mono text-champagne uppercase font-bold tracking-wider">{item.category}</span>
+                  <h4 className="font-display text-sm font-semibold truncate text-charcoal">{item.title}</h4>
+                  <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2">
+                    <span className="price text-xs font-bold text-charcoal">
+                      ₹{item.price_1day?.toLocaleString('en-IN')}<span className="text-[9px] font-normal text-charcoal-light">/day</span>
+                    </span>
+                    <span className="text-[9px] font-mono text-charcoal-light">Dep: ₹{item.security_deposit}</span>
+                  </div>
+                </div>
+              </motion.div>
             );
           })}
         </div>
-      </section>
+      </motion.section>
 
+      {/* ────────────────── SECTION 3: COLLECTIONS ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6 text-left">
+          <div className="mb-12">
+            <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Curated Ensembles</span>
+            <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal mt-1">Heritage Collections</h2>
+          </div>
+
+          {/* Asymmetric 3-col Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* 1 Large Left */}
+            <motion.div 
+              className="lg:col-span-7 relative h-[500px] rounded-lg overflow-hidden group bg-charcoal"
+              whileHover={{ y: -4 }}
+              transition={springTransition}
+            >
+              <motion.div 
+                className="absolute inset-0 bg-cover bg-center opacity-65"
+                style={{ backgroundImage: `url('https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80')` }}
+                whileHover={{ scale: 1.03 }}
+                transition={springTransition}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-transparent" />
+              <div className="absolute bottom-8 left-8 right-8 text-left space-y-2">
+                <span className="text-[10px] font-mono tracking-widest text-champagne uppercase font-bold">Bridal Couture</span>
+                <h3 className="text-3xl font-display text-warm-white font-medium">The Wedding Atelier</h3>
+                <p className="text-xs text-ivory/70 font-light max-w-sm">Rethink wedding style. Rented luxury hand-crafted lehengas and heavy designer sets.</p>
+                <Link href="/discover?occasion=wedding" className="inline-flex items-center gap-2 text-xs font-mono uppercase text-champagne font-bold tracking-widest pt-2 hover:underline">
+                  Explore Collection <ArrowRight size={12} />
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* 2 Stacked Right */}
+            <div className="lg:col-span-5 flex flex-col gap-6">
+              
+              {/* Stack 1 */}
+              <motion.div 
+                className="h-[238px] relative rounded-lg overflow-hidden group bg-charcoal"
+                whileHover={{ y: -4 }}
+                transition={springTransition}
+              >
+                <motion.div 
+                  className="absolute inset-0 bg-cover bg-center opacity-60"
+                  style={{ backgroundImage: `url('https://images.unsplash.com/photo-1597983073493-88cd35cf93b0?auto=format&fit=crop&w=800&q=80')` }}
+                  whileHover={{ scale: 1.03 }}
+                  transition={springTransition}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 text-left space-y-1">
+                  <span className="text-[9px] font-mono tracking-widest text-champagne uppercase font-bold">Grooms & Guests</span>
+                  <h3 className="text-xl font-display text-warm-white font-medium">Modern Sherwanis</h3>
+                  <Link href="/discover?category=sherwani" className="inline-flex items-center gap-1.5 text-xs font-mono uppercase text-champagne font-bold tracking-widest pt-1 hover:underline">
+                    View Outfits <ArrowRight size={10} />
+                  </Link>
+                </div>
+              </motion.div>
+
+              {/* Stack 2 */}
+              <motion.div 
+                className="h-[238px] relative rounded-lg overflow-hidden group bg-charcoal"
+                whileHover={{ y: -4 }}
+                transition={springTransition}
+              >
+                <motion.div 
+                  className="absolute inset-0 bg-cover bg-center opacity-60"
+                  style={{ backgroundImage: `url('https://images.unsplash.com/photo-1610030469668-93535c17b6b3?auto=format&fit=crop&w=800&q=80')` }}
+                  whileHover={{ scale: 1.03 }}
+                  transition={springTransition}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 text-left space-y-1">
+                  <span className="text-[9px] font-mono tracking-widest text-champagne uppercase font-bold">Reception Elegance</span>
+                  <h3 className="text-xl font-display text-warm-white font-medium">Cocktail Sarees</h3>
+                  <Link href="/discover?category=saree" className="inline-flex items-center gap-1.5 text-xs font-mono uppercase text-champagne font-bold tracking-widest pt-1 hover:underline">
+                    View Outfits <ArrowRight size={10} />
+                  </Link>
+                </div>
+              </motion.div>
+
+            </div>
+
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 4: OCCASIONS ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 max-w-7xl mx-auto px-6">
+        <div className="text-center mb-12 space-y-2">
+          <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Style By Occasion</span>
+          <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal">Select Your Event</h2>
+          
+          {/* Animated Pill Filter */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-6">
+            {[
+              { id: 'wedding', label: 'Wedding Ceremonies' },
+              { id: 'reception', label: 'Reception & Soiree' },
+              { id: 'festive', label: 'Festive Gatherings' },
+              { id: 'engagement', label: 'Engagement Gala' },
+            ].map((occ) => {
+              const active = activeOccasion === occ.id;
+              return (
+                <motion.button
+                  key={occ.id}
+                  onClick={() => setActiveOccasion(occ.id)}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={springTransition}
+                  className={`
+                    px-6 h-11 rounded-full text-xs font-mono uppercase tracking-wider transition-colors duration-300 font-bold border cursor-pointer
+                    ${active 
+                      ? 'bg-charcoal text-ivory border-charcoal' 
+                      : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:text-charcoal'
+                    }
+                  `}
+                >
+                  {occ.label}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Outfit Grid Below */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <AnimatePresence mode="popLayout">
+            {occasionOutfits.map((item, idx) => {
+              const imgUrl = item.images?.[0]?.url || '/placeholder-outfit.jpg';
+              return (
+                <motion.div
+                  key={`${item.id}-${idx}`}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  whileHover={{ y: -6 }}
+                  transition={springTransition}
+                  className="bg-white border border-border rounded-lg overflow-hidden group transition-all duration-300 hover:shadow-md text-left"
+                >
+                  <div className="h-[340px] relative overflow-hidden bg-ivory-dark">
+                    <motion.img 
+                      src={imgUrl} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover" 
+                      whileHover={{ scale: 1.05 }}
+                      transition={springTransition}
+                    />
+                    
+                    {/* Hover Link */}
+                    <div className="absolute inset-0 bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
+                        <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase">
+                          Book Outfit
+                        </Link>
+                      </motion.div>
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-1">
+                    <h4 className="font-display text-sm font-semibold truncate text-charcoal">{item.title}</h4>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2 text-xs font-bold font-mono">
+                      <span>₹{item.price_1day?.toLocaleString('en-IN')}<span className="text-[9px] font-normal text-charcoal-light">/day</span></span>
+                      <span className="text-champagne flex items-center gap-0.5"><Star size={10} className="fill-current" /> {item.rating_avg}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 5: AI STYLIST TEASER ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            {/* Image side */}
+            <div className="relative h-[400px] rounded-lg overflow-hidden bg-charcoal shadow-sm">
+              <div className="absolute inset-0 bg-cover bg-center opacity-70"
+                   style={{ backgroundImage: `url('https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80')` }} />
+              <div className="absolute inset-0 bg-gradient-to-r from-charcoal via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 p-6 bg-white/15 backdrop-blur-md border border-white/20 rounded text-left text-warm-white">
+                <span className="text-[9px] font-mono uppercase text-champagne tracking-widest font-bold">Powered by Gemini Pro</span>
+                <h4 className="font-display text-lg mt-1 font-semibold">Instant Fit Consultation</h4>
+                <p className="text-[10px] text-ivory/80 max-w-xs mt-1">Get instant styling advice, cancellation checks, and curation filters mapped by AI.</p>
+              </div>
+            </div>
+
+            {/* Content side */}
+            <div className="text-left space-y-6 lg:pl-6">
+              <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Next Gen Fitting</span>
+              <h2 className="text-3xl md:text-5xl font-display font-medium text-charcoal leading-tight">Your Personal AI Couture Stylist</h2>
+              <p className="text-sm text-charcoal-light leading-relaxed font-light">
+                Indecisive about measurements, fabric, or color coordination? Our Gemini-powered AI assistant understands traditional couture. Describe the wedding aesthetic, and find recommendations.
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                transition={springTransition}
+                onClick={() => setAIStylistOpen(true)}
+                className="btn btn-gold px-8 flex items-center gap-2 cursor-pointer text-xs font-mono uppercase"
+              >
+                <Sparkles size={16} /> Open AI Stylist Assistant
+              </motion.button>
+            </div>
+
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 6: TOP DESIGNERS ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 max-w-7xl mx-auto px-6">
+        <div className="text-center mb-12 space-y-1">
+          <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Aesthetic Benchmarks</span>
+          <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal">Featured Couturiers</h2>
+        </div>
+
+        {/* Circular Avatars Rail */}
+        <div className="flex justify-between items-center overflow-x-auto pb-4 gap-6 scroll-rail">
+          {MOCK_DESIGNERS.map((des) => (
+            <div key={des.name} className="flex flex-col items-center gap-3 min-w-[120px]">
+              <motion.div 
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
+                transition={springTransition}
+                className={`w-24 h-24 rounded-full ${des.bg} flex items-center justify-center text-warm-white text-xl font-display shadow-sm border border-border/10 cursor-pointer`}
+              >
+                {des.logo}
+              </motion.div>
+              <span className="text-[11px] font-mono uppercase font-bold tracking-wider text-charcoal-light">{des.name}</span>
+            </div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 7: SELLER SPOTLIGHT ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-left mb-12">
+            <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Trusted Closets</span>
+            <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal mt-1">Seller Spotlight</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            {MOCK_SELLERS.map((sel) => (
+              <motion.div 
+                key={sel.id} 
+                className="p-6 border border-border rounded-xl flex gap-6 bg-ivory/20 items-center"
+                whileHover={{ y: -4, boxShadow: '0 8px 25px rgba(0, 0, 0, 0.03)' }}
+                transition={springTransition}
+              >
+                <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 bg-ivory-dark border border-border">
+                  <img src={sel.image} alt={sel.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-display text-lg font-bold text-charcoal leading-tight">{sel.name}</h4>
+                    {sel.verified && (
+                      <span className="badge badge-sage text-[8px] flex items-center gap-0.5 font-bold uppercase py-0.5"><ShieldCheck size={10} /> Verified Seller</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-charcoal-light flex items-center gap-1">
+                    <MapPin size={12} className="text-champagne" /> {sel.location}
+                  </p>
+                  <div className="flex items-center gap-6 pt-3 mt-2 border-t border-border/40 text-[10px] font-mono uppercase tracking-wider text-charcoal-light">
+                    <span>Trust Score: <strong className="text-charcoal">{sel.score}</strong></span>
+                    <span>Response: <strong className="text-success">{sel.rate}</strong></span>
+                  </div>
+                </div>
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={springTransition}>
+                  <Link href="/discover" className="w-11 h-11 border border-border rounded-full flex items-center justify-center hover:bg-champagne hover:text-white transition-colors cursor-pointer text-charcoal">
+                    <ChevronRight size={18} />
+                  </Link>
+                </motion.div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 8: RECENTLY ADDED ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 max-w-7xl mx-auto px-6">
+        <div className="flex items-end justify-between mb-12">
+          <div className="text-left">
+            <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Fresh Releases</span>
+            <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal mt-1">Recently Added</h2>
+          </div>
+          <motion.div whileHover={{ x: 3 }} transition={springTransition}>
+            <Link href="/discover?sort=newest" className="text-xs font-mono uppercase tracking-widest text-champagne hover:text-charcoal transition-colors font-bold flex items-center gap-1">
+              Browse New <ChevronRight size={14} />
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* 4-col Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {newArrivals.map((item) => {
+            const imgUrl = item.images?.[0]?.url || '/placeholder-outfit.jpg';
+            const showNew = item.isNew;
+
+            return (
+              <motion.div 
+                key={item.id} 
+                className="bg-white border border-border rounded-lg overflow-hidden group text-left relative"
+                whileHover={{ y: -6, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.03)' }}
+                transition={springTransition}
+              >
+                
+                {/* New Badge */}
+                {showNew && (
+                  <span className="absolute top-3 left-3 bg-rose-gold text-white text-[9px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded shadow z-10">
+                    New
+                  </span>
+                )}
+
+                <div className="h-[320px] relative overflow-hidden bg-ivory-dark">
+                  <motion.img 
+                    src={imgUrl} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover" 
+                    whileHover={{ scale: 1.05 }}
+                    transition={springTransition}
+                  />
+                  
+                  {/* Hover view link */}
+                  <div className="absolute inset-0 bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
+                      <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase">
+                        Inspect
+                      </Link>
+                    </motion.div>
+                  </div>
+                </div>
+                <div className="p-4 space-y-1">
+                  <span className="text-[9px] font-mono text-champagne uppercase font-bold tracking-wider">{item.category}</span>
+                  <h4 className="font-display text-sm font-semibold truncate text-charcoal">{item.title}</h4>
+                  <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-2 text-xs font-bold font-mono text-charcoal">
+                    <span>₹{item.price_1day?.toLocaleString('en-IN')}<span className="text-[9px] font-normal text-charcoal-light">/day</span></span>
+                    <span className="text-[9px] font-normal text-charcoal-light">Dep: ₹{item.security_deposit}</span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 9: FOR YOU (AUTH-GATED) ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-left mb-12">
+            <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Personalized Picks</span>
+            <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal mt-1">Recommended For You</h2>
+          </div>
+
+          {isAuthenticated ? (
+            // Authenticated Grid view
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {trending.map((item, idx) => {
+                const imgUrl = item.images?.[0]?.url || '/placeholder-outfit.jpg';
+                return (
+                  <motion.div 
+                    key={`rec-${item.id}-${idx}`} 
+                    className="bg-white border border-border rounded-lg overflow-hidden group text-left"
+                    whileHover={{ y: -6, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.03)' }}
+                    transition={springTransition}
+                  >
+                    <div className="h-[280px] relative overflow-hidden bg-ivory-dark">
+                      <motion.img 
+                        src={imgUrl} 
+                        alt={item.title} 
+                        className="w-full h-full object-cover" 
+                        whileHover={{ scale: 1.05 }}
+                        transition={springTransition}
+                      />
+                      <div className="absolute inset-0 bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
+                          <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase">
+                            Inspect
+                          </Link>
+                        </motion.div>
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-1">
+                      <h4 className="font-display text-sm font-semibold truncate text-charcoal">{item.title}</h4>
+                      <p className="text-[10px] text-charcoal-light">Curated based on search history</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            // Auth-gated Locked Screen
+            <div className="p-12 border border-border rounded-2xl bg-ivory/30 text-center space-y-4 max-w-xl mx-auto relative overflow-hidden shadow-sm">
+              <div className="absolute top-0 inset-x-0 h-1 bg-champagne" />
+              <div className="w-14 h-14 bg-champagne/10 text-champagne border border-champagne/20 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                <Lock size={20} />
+              </div>
+              <h3 className="font-display text-xl font-semibold text-charcoal">Unlock Personalized Couture Recommendations</h3>
+              <p className="text-xs text-charcoal-light leading-relaxed max-w-sm mx-auto font-light">
+                Sign in to create your fashion profile and unlock recommendations customized for your city, events, and measurements.
+              </p>
+              <div className="pt-2">
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={springTransition}>
+                  <Link href="/auth/login?redirect=/" className="btn btn-primary px-8 text-xs font-mono uppercase">
+                    Login & Unlock
+                  </Link>
+                </motion.div>
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 10: REVIEWS ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 max-w-7xl mx-auto px-6">
+        <div className="text-center mb-12 space-y-1">
+          <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Customer Journals</span>
+          <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal">Renter Testimonials</h2>
+        </div>
+
+        {/* Horizontal Reviews grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          {MOCK_REVIEWS.map((rev) => (
+            <motion.div 
+              key={rev.id} 
+              className="p-6 bg-white border border-border rounded-lg space-y-4 relative flex flex-col justify-between"
+              whileHover={{ y: -6, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.02)' }}
+              transition={springTransition}
+            >
+              <div className="space-y-3">
+                <div className="flex gap-0.5 text-gold">
+                  {[...Array(rev.stars)].map((_, i) => (
+                    <Star key={i} size={14} className="fill-current" />
+                  ))}
+                </div>
+                <p className="text-xs text-charcoal-light leading-relaxed italic font-light">
+                  &ldquo;{rev.text}&rdquo;
+                </p>
+              </div>
+              <div className="flex items-center justify-between border-t border-border/40 pt-4 mt-4 text-[10px] font-mono uppercase text-charcoal-light">
+                <span className="font-bold text-charcoal">{rev.author}</span>
+                <span>{rev.date}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 11: FAQ ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 bg-white">
+        <div className="max-w-3xl mx-auto px-6 text-left">
+          <div className="text-center mb-12 space-y-1">
+            <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Assistance</span>
+            <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal">Frequently Asked Questions</h2>
+          </div>
+
+          {/* Accordion Layout */}
+          <div className="space-y-4">
+            {[
+              { q: 'How does the rental timeline work?', a: 'Rentals are structured in durations of 1, 3, or 7 days. Your rental starts on your selected pick-up date and returns must be packed and ready for return pickup on the final day.' },
+              { q: 'What is the security deposit policy?', a: 'Every couture piece listed requires a security deposit. This deposit is securely held in platform escrow during the rental. Within 72 hours of return and quality review, the funds are released back to your Kloset wallet or bank account.' },
+              { q: 'Who handles the dry-cleaning of outfits?', a: 'Kloset Luxe handles all dry-cleaning! Every outfit undergoes premium steam-sterilization and sanitization before dispatch. Renters should not wash or dry-clean outfits themselves.' },
+              { q: 'What happens in case of minor damage or stains?', a: 'Normal wear and tear (such as loose threads or tiny removable stains) is covered by our damage policies. For major stains, fabric tears, or permanent burns, repair costs will be deducted from the security deposit.' },
+            ].map((faq, idx) => {
+              const isOpen = !!faqOpen[idx];
+              return (
+                <div key={idx} className="border border-border rounded-lg overflow-hidden bg-ivory/10 transition-colors duration-300">
+                  <button
+                    onClick={() => toggleFaq(idx)}
+                    className="w-full p-5 flex items-center justify-between text-left font-display text-sm font-semibold text-charcoal hover:bg-ivory-dark/30 transition-colors cursor-pointer"
+                  >
+                    <span>{faq.q}</span>
+                    <span className="text-champagne font-mono text-base font-bold flex-shrink-0 ml-4">
+                      {isOpen ? <Minus size={16} /> : <Plus size={16} />}
+                    </span>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={springTransition}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-5 pt-0 border-t border-border/30 text-xs text-charcoal-light leading-relaxed font-light">
+                          {faq.a}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </motion.section>
+
+      {/* ────────────────── SECTION 12: TRUST ATELIER & JOURNAL ────────────────── */}
+      <motion.section {...sectionsTransition} className="py-24 max-w-7xl mx-auto px-6 border-t border-border/40">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Brand Story / Trust Factors */}
+          <div className="text-left space-y-8">
+            <div className="space-y-2">
+              <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">Circular Luxury</span>
+              <h2 className="text-3xl md:text-4xl font-display font-medium text-charcoal">Redefining Ownership</h2>
+              <p className="text-sm text-charcoal-light leading-relaxed font-light animate-fade-in">
+                Kloset Luxe enables circular fashion for the modern muse. Enjoy premium heritage wear sustainably, with pristine professional care and verified authenticity.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {[
+                { icon: ShieldCheck, title: '100% Authenticity Guarantee', desc: 'Every designer masterwork is rigorously inspected by our authentication team.' },
+                { icon: Sparkles, title: 'Professional Sanitization', desc: 'Each rental undergoes advanced steam dry-cleaning and packaging prior to dispatch.' },
+                { icon: ArrowRight, title: 'Circular Sustainability', desc: 'Extending the life cycle of premium apparel while reducing environmental footprint.' }
+              ].map((item, idx) => (
+                <div key={idx} className="flex gap-4 items-start">
+                  <div className="w-10 h-10 rounded bg-champagne/10 border border-champagne/20 flex items-center justify-center text-champagne flex-shrink-0">
+                    <item.icon size={18} />
+                  </div>
+                  <div>
+                    <h4 className="font-display text-sm font-semibold text-charcoal">{item.title}</h4>
+                    <p className="text-xs text-charcoal-light font-light mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Minimal Editorial Newsletter Subscription */}
+          <div className="p-10 border border-border bg-white rounded-xl shadow-sm space-y-6 text-left relative overflow-hidden">
+            <div className="absolute top-0 inset-x-0 h-1 bg-champagne" />
+            <div className="space-y-2">
+              <span className="text-[9px] font-mono tracking-widest text-champagne uppercase font-bold block">The Kloset Journal</span>
+              <h3 className="font-display text-2xl font-medium text-charcoal">Subscribe to the Chronicles</h3>
+              <p className="text-xs text-charcoal-light leading-relaxed font-light">
+                Receive curated collection announcements, exclusive partner closet access, and styling tips from our editorial board.
+              </p>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); toast.success('Welcome to the Kloset Journal!'); }} className="space-y-4">
+              <div className="space-y-1">
+                <input
+                  type="email"
+                  placeholder="Enter your email address"
+                  className="input-kloset w-full"
+                  required
+                />
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={springTransition}
+                type="submit"
+                className="btn btn-primary w-full"
+              >
+                Join the Circle
+              </motion.button>
+            </form>
+          </div>
+
+        </div>
+      </motion.section>
+
+      {/* FOOTER IS INTEGRATED GLOBALLY VIA APPSHELL. GLOBALS CONTAINER CONTEXT HANDLED. */}
     </div>
   );
 }

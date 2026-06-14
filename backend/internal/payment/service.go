@@ -40,19 +40,24 @@ func NewService(repo *Repository, emailService *email.Service, cfg *config.Confi
 }
 
 func (s *Service) VerifyPayment(req *VerifyPaymentRequest) (*booking.Booking, error) {
-	if s.cfg.Razorpay.KeySecret == "" {
-		return nil, errors.New("payment gateway is not properly configured")
-	}
-
-	// Verify Razorpay signature strictly
-	if !s.rzpClient.VerifySignature(req.RazorpayOrderID, req.RazorpayPaymentID, req.RazorpaySignature) {
-		log.Error().Str("provided", req.RazorpaySignature).Msg("Razorpay signature mismatch")
-		err := errors.New("payment signature verification failed")
-		sentry.CaptureException(err)
-		if s.logSvc != nil {
-			s.logSvc.LogEvent("anonymous", "Failed Razorpay payment signature verification: OrderID: "+req.RazorpayOrderID, "127.0.0.1", "error")
+	// Bypass verification in non-production environments with mock signature
+	if s.cfg.App.Env != "production" && req.RazorpaySignature == "simulated_signature" {
+		log.Info().Msg("Bypassing Razorpay signature verification in development for mock signature")
+	} else {
+		if s.cfg.Razorpay.KeySecret == "" {
+			return nil, errors.New("payment gateway is not properly configured")
 		}
-		return nil, err
+
+		// Verify Razorpay signature strictly
+		if !s.rzpClient.VerifySignature(req.RazorpayOrderID, req.RazorpayPaymentID, req.RazorpaySignature) {
+			log.Error().Str("provided", req.RazorpaySignature).Msg("Razorpay signature mismatch")
+			err := errors.New("payment signature verification failed")
+			sentry.CaptureException(err)
+			if s.logSvc != nil {
+				s.logSvc.LogEvent("anonymous", "Failed Razorpay payment signature verification: OrderID: "+req.RazorpayOrderID, "127.0.0.1", "error")
+			}
+			return nil, err
+		}
 	}
 
 	// Update booking and payment status in GORM transaction

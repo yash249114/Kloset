@@ -12,6 +12,7 @@ type RegisterRequest struct {
 // GoogleLoginRequest represents the Google OAuth payload
 type GoogleLoginRequest struct {
 	Credential string `json:"credential" validate:"required"`
+	Role       string `json:"role"`
 }
 
 // LoginRequest represents the login payload

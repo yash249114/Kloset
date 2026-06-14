@@ -1,33 +1,12 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import { Toaster } from 'sonner';
-import SupportWidget from '@/components/support/SupportWidget';
 import GoogleProvider from '@/components/providers/GoogleProvider';
-import { CSPostHogProvider } from '@/components/providers/PostHogProvider';
+import PostHogProvider from '@/components/providers/PostHogProvider';
+import AppShell from '@/components/layout/AppShell';
 
 export const metadata: Metadata = {
-  title: 'Kloset — Rent Designer Outfits',
-  description:
-    'Rent designer Indian outfits for weddings, parties, and festivals. Browse lehengas, sarees, sherwanis, and more from verified owners across India.',
-  keywords: [
-    'fashion rental',
-    'rent outfits',
-    'designer wear',
-    'lehenga rental',
-    'saree rental',
-    'wedding outfits',
-    'Indian fashion',
-    'Kloset',
-  ],
-  openGraph: {
-    title: 'Kloset — Rent Designer Outfits',
-    description: 'Rent designer Indian outfits for any occasion.',
-    type: 'website',
-    url: 'https://kloset.in',
-    siteName: 'Kloset',
-  },
+  title: 'Kloset Luxe — Luxury Fashion Rental Studio',
+  description: 'Rent premium wedding wear, designer sarees, sherwanis, and bridal couture across India.',
 };
 
 export default function RootLayout({
@@ -37,25 +16,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <CSPostHogProvider>
+      <head>
+        {/* Dynamic Editorial Web Fonts */}
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" 
+          rel="stylesheet"
+        />
+      </head>
+      <body className="antialiased min-h-screen bg-ivory text-charcoal">
+        <PostHogProvider>
           <GoogleProvider>
-            <Navbar />
-            <main style={{ paddingTop: 'var(--nav-height)' }}>
+            <AppShell>
               {children}
-            </main>
-            <Footer />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                style: { fontFamily: 'var(--font-body)' },
-              }}
-            />
-            <SupportWidget />
+            </AppShell>
           </GoogleProvider>
-        </CSPostHogProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
 }
-

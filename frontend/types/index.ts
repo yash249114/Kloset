@@ -220,6 +220,19 @@ export interface Review {
   created_at: string;
 }
 
+export interface ReviewResponse {
+  id: string;
+  booking_id: string;
+  reviewer_id: string;
+  outfit_id: string;
+  seller_id: string;
+  rating: number;
+  comment?: string;
+  photos?: string;
+  created_at: string;
+  reviewer_name?: string;
+}
+
 // ─── Notification ────────────────────────────────────
 export interface Notification {
   id: string;

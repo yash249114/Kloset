@@ -303,7 +303,12 @@ func (s *Service) GoogleLogin(req *GoogleLoginRequest) (*AuthResponse, error) {
 	}
 
 	if user == nil {
-		// Auto Register Google profile as a Renter
+		// Auto Register Google profile with requested role (default to renter)
+		userRole := "renter"
+		if req.Role == "seller" || req.Role == "both" {
+			userRole = "seller"
+		}
+
 		phoneHash, _ := rand.Int(rand.Reader, big.NewInt(9000000000))
 		mockPhone := "+91" + fmt.Sprintf("%d", phoneHash.Int64()+1000000000)
 		
@@ -313,7 +318,7 @@ func (s *Service) GoogleLogin(req *GoogleLoginRequest) (*AuthResponse, error) {
 			Email:        email,
 			Phone:        mockPhone,
 			PasswordHash: hashedPass,
-			Role:         "renter",
+			Role:         userRole,
 			IsActive:     true,
 			IsVerified:   true, // Pre-verified via Google email check
 		}

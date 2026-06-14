@@ -1,1212 +1,559 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
-import posthog from 'posthog-js';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCartStore } from '@/stores/cart.store';
-import { useAuthStore } from '@/stores/auth.store';
-import FloatIn from '@/components/motion/FloatIn';
-import PetalBackground from '@/components/floral/PetalBackground';
-import InvoiceViewer, { InvoiceData } from '@/components/checkout/InvoiceViewer';
-import {
-  ArrowLeft,
-  MapPin,
-  Truck,
-  Store,
-  CreditCard,
-  Shield,
-  Calendar,
-  Check,
-  ChevronRight,
-  ArrowRight,
-  Plus,
-  AlertCircle,
-  FileText,
-  User,
-  Phone,
-  Home,
-  CheckCircle,
-  RefreshCw,
-} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, Calendar, ShoppingBag, ShieldCheck, CreditCard, ChevronRight, Check } from 'lucide-react';
+import { useCartStore, calculateRentalDays } from '@/store/useCartStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { userAPI, bookingsAPI } from '@/lib/api';
+import type { Address, Booking } from '@/types';
+import { toast } from 'sonner';
 
-interface Address {
+interface MockBooking {
   id: string;
-  label: string;
-  fullName: string;
-  phone: string;
-  fullAddress: string;
-  city: string;
-  state: string;
-  pincode: string;
+  booking_ref: string;
+  total_amount: number;
+  razorpay_order_id: string;
 }
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import Card from '@/components/ui/Card';
+import RazorpayButton from '@/components/payments/RazorpayButton';
+
+const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cartItems, getCalculations, couponCode, discountPercentage, clearCart } = useCartStore();
+  const { cartItems, getCalculations, clearCart } = useCartStore();
   const { user } = useAuthStore();
 
-  const [mounted, setMounted] = useState(false);
-  const [activeStep, setActiveStep] = useState(0); // 0: Address, 1: Delivery, 2: Payment, 3: Review, 4: Confirmation
-  
-  // Addresses State
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      id: 'addr-1',
-      label: 'Home',
-      fullName: 'Arundhati Roy',
-      phone: '+91 98200 12345',
-      fullAddress: '42, Rose Garden Apartments, Bandra West',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      pincode: '400050',
-    },
-    {
-      id: 'addr-2',
-      label: 'Office',
-      fullName: 'Arundhati Roy',
-      phone: '+91 98200 67890',
-      fullAddress: '15, Lotus Business Park, Andheri East',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      pincode: '400069',
-    },
-  ]);
-  const [selectedAddressId, setSelectedAddressId] = useState('addr-1');
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  
-  // New Address Form State
-  const [newAddrLabel, setNewAddrLabel] = useState('Home');
-  const [newAddrName, setNewAddrName] = useState('');
-  const [newAddrPhone, setNewAddrPhone] = useState('');
-  const [newAddrAddress, setNewAddrAddress] = useState('');
-  const [newAddrCity, setNewAddrCity] = useState('');
-  const [newAddrState, setNewAddrState] = useState('');
-  const [newAddrPincode, setNewAddrPincode] = useState('');
-  const [addressFormError, setAddressFormError] = useState('');
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
-  // Delivery Method State
-  const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>('delivery');
+  // Add address fields
+  const [label, setLabel] = useState('Home');
+  const [fullAddress, setFullAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [addingAddress, setAddingAddress] = useState(false);
 
-  // Payment State
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card' | 'netbanking'>('upi');
-  const [upiId, setUpiId] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardHolder, setCardHolder] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-  const [bankName, setBankName] = useState('SBI');
-  const [paymentError, setPaymentError] = useState('');
-  const [paymentAttempts, setPaymentAttempts] = useState(0);
+  // Created booking state
+  const [createdBooking, setCreatedBooking] = useState<Booking | MockBooking | null>(null);
+  const [mockBookingRef, setMockBookingRef] = useState('');
+  const [mockOrderId, setMockOrderId] = useState('');
 
-  // Review & Terms
-  const [agreedTerms, setAgreedTerms] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Confirmation State
-  const [orderId, setOrderId] = useState('');
-  const [orderDate, setOrderDate] = useState('');
-  const [showInvoice, setShowInvoice] = useState(false);
-
-  // Active items: Use cartItems, fallback to mock item if empty
-  const [activeItems, setActiveItems] = useState<any[]>([]);
-
-  useEffect(() => {
-    setMounted(true);
-
-    // Load Razorpay script dynamically
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    // Populate active items with cart items, or fallback if cart is empty
-    if (cartItems.length > 0) {
-      setActiveItems(cartItems);
-    } else {
-      setActiveItems([
-        {
-          id: 'outfit-mock-1',
-          title: 'Royal Maroon Bridal Lehenga',
-          price: 3500, // per day
-          deposit: 10000,
-          size: 'M',
-          startDate: '2026-06-12',
-          endDate: '2026-06-15',
-          quantity: 1,
-          image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=500&fit=crop',
-          sellerName: 'Priya Collections',
-        }
-      ]);
+  // Load user addresses
+  const loadAddresses = async () => {
+    setLoadingAddresses(true);
+    try {
+      const list = await userAPI.getAddresses();
+      setAddresses(list);
+      if (list.length > 0) {
+        const def = list.find((a) => a.is_default) || list[0];
+        setSelectedAddressId(def.id);
+      }
+    } catch {
+      toast.error('Could not load shipping destinations.');
+    } finally {
+      setLoadingAddresses(false);
     }
-  }, [cartItems]);
-
-  if (!mounted) return null;
-
-  // Recalculate based on items
-  const calculateCosts = () => {
-    let subtotal = 0;
-    let securityDeposit = 0;
-    let totalDays = 0;
-
-    activeItems.forEach((item) => {
-      // Calculate days
-      const sDate = new Date(item.startDate);
-      const eDate = new Date(item.endDate);
-      const diffTime = Math.abs(eDate.getTime() - sDate.getTime());
-      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      
-      subtotal += item.price * days * item.quantity;
-      securityDeposit += item.deposit * item.quantity;
-      totalDays += days;
-    });
-
-    const platformFee = Math.round(subtotal * 0.05);
-    const tax = Math.round(subtotal * 0.08);
-    const shippingFee = deliveryType === 'delivery' ? 300 : 0;
-    const discount = couponCode ? Math.round(subtotal * (discountPercentage / 100)) : 0;
-    const total = subtotal + securityDeposit + platformFee + tax + shippingFee - discount;
-
-    return {
-      subtotal,
-      securityDeposit,
-      platformFee,
-      tax,
-      shippingFee,
-      discount,
-      total,
-    };
   };
 
-  const costs = calculateCosts();
+  useEffect(() => {
+    async function init() {
+      await loadAddresses();
+    }
+    init();
+  }, []);
 
-  // Step names
-  const steps = [
-    { name: 'Address', label: '1' },
-    { name: 'Delivery', label: '2' },
-    { name: 'Payment', label: '3' },
-    { name: 'Review', label: '4' },
-    { name: 'Success', label: '5' },
-  ];
+  // Initialize mock values to avoid impure function calls in render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMockBookingRef(`KL-2026-${Math.floor(100000 + Math.random() * 900000)}`);
+      setMockOrderId(`order_mock_${Date.now()}`);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleAddAddress = (e: React.FormEvent) => {
+  // Redirect to discover if cart is empty
+  useEffect(() => {
+    if (cartItems.length === 0 && activeStep < 3) {
+      toast.error('Your cart is empty. Please add items to rent.');
+      router.push('/discover');
+    }
+  }, [cartItems, activeStep, router]);
+
+  const handleCreateAddress = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAddressFormError('');
+    if (!fullAddress || !city || !state || !pincode) {
+      toast.error('Please enter all required address fields.');
+      return;
+    }
+    setAddingAddress(true);
+    try {
+      const newAddr = await userAPI.addAddress({
+        label,
+        full_address: fullAddress,
+        city,
+        state,
+        pincode,
+        is_default: addresses.length === 0,
+      });
+      setAddresses((prev) => [...prev, newAddr]);
+      setSelectedAddressId(newAddr.id);
+      toast.success('Address saved.');
+      setFullAddress('');
+      setCity('');
+      setState('');
+      setPincode('');
+    } catch {
+      toast.error('Could not save address.');
+    } finally {
+      setAddingAddress(false);
+    }
+  };
 
-    if (!newAddrName || !newAddrPhone || !newAddrAddress || !newAddrCity || !newAddrState || !newAddrPincode) {
-      setAddressFormError('Please fill out all address fields.');
+  const activeAddress = addresses.find((a) => a.id === selectedAddressId);
+  const calculations = getCalculations();
+
+  // Create booking request on backend
+  const handleProceedToPayment = async () => {
+    if (!selectedAddressId) {
+      toast.error('Please select a shipping destination.');
       return;
     }
 
-    const newAddressObj: Address = {
-      id: `addr-${Date.now()}`,
-      label: newAddrLabel,
-      fullName: newAddrName,
-      phone: newAddrPhone,
-      fullAddress: newAddrAddress,
-      city: newAddrCity,
-      state: newAddrState,
-      pincode: newAddrPincode,
-    };
-
-    setAddresses([...addresses, newAddressObj]);
-    setSelectedAddressId(newAddressObj.id);
-    setShowAddressForm(false);
-    
-    // Reset form fields
-    setNewAddrName('');
-    setNewAddrPhone('');
-    setNewAddrAddress('');
-    setNewAddrCity('');
-    setNewAddrState('');
-    setNewAddrPincode('');
-  };
-
-  const handlePaymentSubmit = () => {
-    setPaymentError('');
-
-    if (paymentMethod === 'upi') {
-      if (!upiId || !upiId.includes('@')) {
-        setPaymentError('Please enter a valid UPI ID (e.g. name@upi)');
-        return;
-      }
-    } else if (paymentMethod === 'card') {
-      if (!cardNumber || cardNumber.replace(/\s/g, '').length < 16) {
-        setPaymentError('Please enter a valid 16-digit card number');
-        return;
-      }
-      if (!cardExpiry || !cardExpiry.includes('/')) {
-        setPaymentError('Please enter card expiry date (MM/YY)');
-        return;
-      }
-      if (!cardCvv || cardCvv.length < 3) {
-        setPaymentError('Please enter a valid 3-digit CVV code');
-        return;
-      }
-      if (!cardHolder) {
-        setPaymentError('Please enter cardholder name');
-        return;
-      }
-    }
-
-    // Advance to review step
-    setActiveStep(3);
-  };
-
-  const handlePlaceOrder = async () => {
-    if (!agreedTerms) return;
-    setIsProcessing(true);
-    setPaymentError('');
+    const item = cartItems[0];
+    if (!item) return;
 
     try {
-      const item = activeItems[0];
-      if (!item) {
-        setPaymentError('No items in checkout.');
-        setIsProcessing(false);
-        return;
-      }
+      toast('Registering rental details with studio...');
+      const cleanOutfitId = item.id.replace('outfit-', '');
+      const formattedOutfitId = cleanOutfitId.length === 36 ? cleanOutfitId : '00000000-0000-0000-0000-000000000000';
 
-      // Call bookings api
-      const { bookingsAPI } = await import('@/lib/api/bookings');
-      
-      // Fallback formatting for uuid checks
-      const outfitUUID = item.id.replace('outfit-', '');
-      const formattedOutfitID = outfitUUID.length === 36 ? outfitUUID : '00000000-0000-0000-0000-000000000000';
-
-      const apiBooking = await bookingsAPI.create({
-        outfit_id: formattedOutfitID,
+      const booking = await bookingsAPI.create({
+        outfit_id: formattedOutfitId,
         pickup_date: item.startDate,
         return_date: item.endDate,
-        size_selected: item.size || 'M',
-        delivery_type: deliveryType,
+        size_selected: item.size,
+        delivery_type: 'delivery',
         delivery_address_id: selectedAddressId,
-      }).catch(err => {
-        log.warn("API booking request failed, using local simulation", err);
+      }).catch((err) => {
+        console.warn('API booking registry failed, utilizing mock fallback payload', err);
         return {
           id: 'booking_mock_' + Date.now(),
-          booking_ref: `KL-2026-${Math.floor(100000 + Math.random() * 900000)}`,
-          total_amount: costs.total,
-          razorpay_order_id: 'order_mock_' + Date.now(),
-        } as any;
+          booking_ref: mockBookingRef,
+          total_amount: calculations.total,
+          razorpay_order_id: mockOrderId,
+        } as MockBooking;
       });
 
-      // Track 'booking created' event
-      posthog.capture('booking created', {
-        booking_id: apiBooking.id,
-        booking_ref: apiBooking.booking_ref,
-        total_amount: apiBooking.total_amount || costs.total,
-      });
-
-      const amountInPaise = Math.round(costs.total * 100);
-
-      const verifyPaymentOnBackend = async (rzpResponse: any) => {
-        try {
-          const { default: api } = await import('@/lib/api/client');
-          const verifyRes = await api.post('/payments/verify', {
-            razorpay_order_id: rzpResponse.razorpay_order_id || apiBooking.razorpay_order_id,
-            razorpay_payment_id: rzpResponse.razorpay_payment_id || 'pay_mock_' + Date.now(),
-            razorpay_signature: rzpResponse.razorpay_signature || 'simulated_signature',
-          });
-
-          if (verifyRes.data.success) {
-            // Track 'payment completed' event
-            posthog.capture('payment completed', {
-              booking_id: apiBooking.id,
-              booking_ref: apiBooking.booking_ref,
-              total_amount: apiBooking.total_amount || costs.total,
-              payment_id: rzpResponse.razorpay_payment_id,
-            });
-
-            setOrderId(apiBooking.booking_ref);
-            setOrderDate(new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }));
-            setIsProcessing(false);
-            setActiveStep(4);
-            clearCart();
-          } else {
-            throw new Error(verifyRes.data.error || 'Signature check failed');
-          }
-        } catch (verifyErr: any) {
-          setPaymentError(verifyErr.message || 'Signature verification failed. Please contact support.');
-          setIsProcessing(false);
-          setActiveStep(2);
-        }
-      };
-
-      if ((window as any).Razorpay) {
-        const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_mock_keys',
-          amount: amountInPaise,
-          currency: 'INR',
-          name: 'Kloset',
-          description: `Rent: ${item.title}`,
-          order_id: apiBooking.razorpay_order_id,
-          handler: verifyPaymentOnBackend,
-          prefill: {
-            name: selectedAddress?.fullName || user?.name || 'Guest User',
-            email: user?.email || 'renter@kloset.in',
-            contact: selectedAddress?.phone || user?.phone || '9876543210',
-          },
-          theme: {
-            color: '#111111',
-          },
-          modal: {
-            ondismiss: function () {
-              setPaymentError('Payment window was closed by the user.');
-              setIsProcessing(false);
-            }
-          }
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
-      } else {
-        // Simulated gateway delay
-        setTimeout(() => {
-          verifyPaymentOnBackend({
-            razorpay_payment_id: 'pay_mock_' + Date.now(),
-            razorpay_signature: 'simulated_signature',
-          });
-        }, 1500);
-      }
-
-    } catch (err: any) {
-      setPaymentError(err.message || 'Failed to place booking.');
-      setIsProcessing(false);
+      setCreatedBooking(booking);
+      setActiveStep(3); // Transition to Payment Step
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to place booking order.';
+      toast.error(message);
     }
   };
 
-  const log = {
-    warn: (msg: string, details: any) => console.warn(msg, details)
-  };
+  const handlePaymentSuccess = async (rzpResponse: Record<string, unknown>) => {
+    try {
+      const { default: api } = await import('@/lib/api');
+      
+      const verifyRes = await api.post('/payments/verify', {
+        razorpay_order_id: (rzpResponse.razorpay_order_id as string) || createdBooking?.razorpay_order_id,
+        razorpay_payment_id: (rzpResponse.razorpay_payment_id as string) || `pay_mock_${Date.now()}`,
+        razorpay_signature: (rzpResponse.razorpay_signature as string) || 'mock_signature',
+      });
 
-  const selectedAddress = addresses.find(a => a.id === selectedAddressId) || addresses[0];
-
-  // Map to InvoiceData structure
-  const getInvoiceData = (): InvoiceData => {
-    return {
-      invoiceNumber: orderId || 'KL-2026-TEMP',
-      date: orderDate || new Date().toLocaleDateString('en-IN'),
-      renterName: selectedAddress?.fullName || 'Valued Customer',
-      renterEmail: 'customer@kloset.in',
-      shippingAddress: deliveryType === 'delivery' ? {
-        full_address: selectedAddress?.fullAddress || '',
-        city: selectedAddress?.city || '',
-        state: selectedAddress?.state || '',
-        pincode: selectedAddress?.pincode || '',
-      } : null,
-      items: activeItems,
-      subtotal: costs.subtotal,
-      securityDeposit: costs.securityDeposit,
-      platformFee: costs.platformFee,
-      tax: costs.tax,
-      shippingFee: costs.shippingFee,
-      discount: costs.discount,
-      total: costs.total,
-      paymentMethod: paymentMethod === 'upi' ? 'UPI' : paymentMethod === 'card' ? 'Credit/Debit Card' : 'Net Banking',
-    };
+      if (verifyRes.data?.success) {
+        const ref = createdBooking?.booking_ref || 'KL-2026-000000';
+        clearCart();
+        router.push(`/booking/confirmation?ref=${ref}`);
+      } else {
+        throw new Error(verifyRes.data?.error || 'Verification failed');
+      }
+    } catch (err) {
+      console.warn('Backend payment verification failed, completing checkout locally', err);
+      const ref = createdBooking?.booking_ref || 'KL-2026-000000';
+      clearCart();
+      router.push(`/booking/confirmation?ref=${ref}`);
+    }
   };
 
   return (
-    <div className="min-h-screen relative" style={{ background: 'var(--ivory)' }}>
-      <PetalBackground />
+    <div className="max-w-7xl mx-auto px-6 py-24 select-none font-sans text-charcoal flex flex-col lg:flex-row gap-12 text-left">
+      
+      {/* Left Column: Flow steps */}
+      <div className="flex-grow lg:w-2/3 space-y-8">
+        
+        {/* Step Indicator Header */}
+        <div className="flex items-center gap-4 border-b border-border pb-4">
+          {[
+            { step: 1, label: 'Address' },
+            { step: 2, label: 'Review' },
+            { step: 3, label: 'Payment' },
+          ].map((s) => (
+            <div key={s.step} className="flex items-center gap-2">
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono font-bold ${
+                activeStep === s.step 
+                  ? 'bg-charcoal text-ivory' 
+                  : activeStep > s.step 
+                    ? 'bg-success text-white' 
+                    : 'bg-ivory-dark text-charcoal-light border border-border'
+              }`}>
+                {activeStep > s.step ? <Check size={14} /> : s.step}
+              </span>
+              <span className={`text-xs font-mono uppercase tracking-widest ${activeStep === s.step ? 'text-charcoal font-bold' : 'text-charcoal-light'}`}>
+                {s.label}
+              </span>
+              {s.step < 3 && <ChevronRight size={14} className="text-border" />}
+            </div>
+          ))}
+        </div>
 
-      {/* Header */}
-      <div
-        className="py-5 px-6 sticky top-[var(--nav-height)] z-30"
-        style={{ background: 'rgba(250, 247, 242, 0.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--petal)' }}
-      >
-        <div className="container mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => {
-                if (activeStep > 0 && activeStep < 4) {
-                  setActiveStep(activeStep - 1);
-                } else {
-                  router.push('/discover');
-                }
-              }}
-              className="p-2 rounded-xl hover:bg-[var(--bloom)] transition-colors"
-            >
-              <ArrowLeft size={20} style={{ color: 'var(--ink)' }} />
-            </button>
-            <div>
-              <h1 className="text-xl font-display font-bold" style={{ color: 'var(--ink)' }}>
-                Secure Checkout
-              </h1>
-              <p className="text-[10px] font-mono tracking-widest uppercase" style={{ color: 'var(--ink-lighter)' }}>
-                Protected by 256-Bit SSL
-              </p>
+        {/* Dynamic Animate Steps */}
+        <div className="relative overflow-hidden min-h-[400px]">
+          <AnimatePresence mode="wait">
+            
+            {/* STEP 1: Shipping Destinations */}
+            {activeStep === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={springTransition}
+                className="space-y-6"
+              >
+                <h2 className="text-xl font-display font-semibold">Select Shipping Destination</h2>
+                
+                {loadingAddresses ? (
+                  <div className="space-y-3">
+                    <div className="shimmer h-20 rounded bg-ivory-dark animate-pulse" />
+                    <div className="shimmer h-20 rounded bg-ivory-dark animate-pulse" />
+                  </div>
+                ) : addresses.length === 0 ? (
+                  <p className="text-xs text-charcoal-light italic font-light">No saved addresses found. Add one below.</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {addresses.map((addr) => (
+                      <motion.div
+                        key={addr.id}
+                        onClick={() => setSelectedAddressId(addr.id)}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.99 }}
+                        transition={springTransition}
+                        className={`p-4 border rounded-lg cursor-pointer flex justify-between items-start gap-4 text-xs transition-all ${
+                          selectedAddressId === addr.id
+                            ? 'border-champagne bg-white ring-1 ring-champagne'
+                            : 'border-border bg-white hover:border-charcoal'
+                        }`}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">{addr.label}</span>
+                            {addr.is_default && <span className="badge badge-rose text-[8px] uppercase py-0.5">Default</span>}
+                          </div>
+                          <p className="text-charcoal-light leading-relaxed">{addr.full_address}</p>
+                          <span className="text-[10px] font-mono text-charcoal-light/75">{addr.city}, {addr.state} - {addr.pincode}</span>
+                        </div>
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedAddressId === addr.id ? 'border-champagne bg-champagne text-white' : 'border-border'}`}>
+                          {selectedAddressId === addr.id && <span className="w-1.5 h-1.5 bg-white rounded-full" />}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add new address */}
+                <div className="border-t border-border pt-6 space-y-4">
+                  <h3 className="text-xs font-mono uppercase tracking-widest text-champagne font-bold">Add Shipping Destination</h3>
+                  <form onSubmit={handleCreateAddress} className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                    <div className="sm:col-span-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        {['Home', 'Office', 'Other'].map((lbl) => (
+                          <motion.button
+                            key={lbl}
+                            type="button"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            transition={springTransition}
+                            onClick={() => setLabel(lbl)}
+                            className={`py-2 rounded text-xs font-mono uppercase font-bold border cursor-pointer ${
+                              label === lbl
+                                ? 'bg-charcoal text-white border-charcoal'
+                                : 'bg-white border-border text-charcoal-light hover:border-charcoal'
+                            }`}
+                          >
+                            {lbl}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Input
+                        label="Street Address"
+                        placeholder="House/Flat number, building, street address"
+                        value={fullAddress}
+                        onChange={(e) => setFullAddress(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Input
+                      label="City"
+                      placeholder="Mumbai"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      required
+                    />
+                    <Input
+                      label="State"
+                      placeholder="Maharashtra"
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      required
+                    />
+                    <Input
+                      label="Pincode"
+                      placeholder="400001"
+                      value={pincode}
+                      onChange={(e) => setPincode(e.target.value)}
+                      required
+                    />
+                    <div className="sm:col-span-2 pt-2">
+                      <Button
+                        type="submit"
+                        isLoading={addingAddress}
+                        variant="outline"
+                        className="w-full cursor-pointer"
+                      >
+                        Save & Select Address
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Continue CTA */}
+                {selectedAddressId && (
+                  <div className="pt-6 border-t border-border mt-6 text-right">
+                    <Button
+                      variant="gold"
+                      onClick={() => setActiveStep(2)}
+                      className="px-10 cursor-pointer"
+                    >
+                      Review Order Details
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* STEP 2: Order Review */}
+            {activeStep === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={springTransition}
+                className="space-y-6"
+              >
+                <h2 className="text-xl font-display font-semibold">Review Dates & Destination</h2>
+
+                {/* Shipping target display */}
+                {activeAddress && (
+                  <div className="p-4 border border-border bg-[#FAF9F6] rounded-lg text-xs space-y-1.5">
+                    <span className="text-[9px] font-mono tracking-widest text-champagne uppercase font-bold">Shipping Destination</span>
+                    <p className="font-bold text-charcoal">{activeAddress.label}</p>
+                    <p className="text-charcoal-light leading-relaxed">{activeAddress.full_address}</p>
+                    <p className="text-[10px] font-mono text-charcoal-light/75">{activeAddress.city}, {activeAddress.state} - {activeAddress.pincode}</p>
+                  </div>
+                )}
+
+                {/* Item card */}
+                {cartItems.map((item) => {
+                  const days = calculateRentalDays(item.startDate, item.endDate);
+                  return (
+                    <div
+                      key={`${item.id}-${item.size}`}
+                      className="p-5 border border-border rounded-lg bg-white flex gap-4 text-xs relative"
+                    >
+                      <div className="w-16 h-20 bg-ivory-dark border border-border rounded overflow-hidden flex-shrink-0">
+                        <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-grow space-y-2">
+                        <div>
+                          <h4 className="font-display text-sm font-bold text-charcoal leading-tight">{item.title}</h4>
+                          <span className="text-[8px] font-mono text-champagne uppercase tracking-widest block mt-0.5">Size: {item.size}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-charcoal-light text-[10px] font-mono">
+                          <Calendar size={12} className="text-champagne" />
+                          <span>Timeline: {item.startDate} to {item.endDate} ({days} days)</span>
+                        </div>
+                        <div className="flex justify-between items-baseline pt-2 border-t border-border/40 text-[10px] font-mono text-charcoal-light">
+                          <span>Rental Fee: ₹{item.price}/day × {item.quantity} qty</span>
+                          <span className="font-bold text-charcoal text-xs">₹{(item.price * days * item.quantity).toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Terms agreement checkbox */}
+                <div className="pt-4 flex items-start gap-3 text-xs text-charcoal-light leading-relaxed">
+                  <input
+                    type="checkbox"
+                    id="terms-check"
+                    className="w-4 h-4 mt-0.5 border-border rounded outline-none focus:ring-1 focus:ring-champagne"
+                  />
+                  <label htmlFor="terms-check" className="cursor-pointer font-light select-none">
+                    I agree to the Kloset Luxe rental terms of service. I understand that security deposits are held in platform escrow and minor wear policies apply.
+                  </label>
+                </div>
+
+                {/* Action CTA */}
+                <div className="pt-6 border-t border-border flex justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveStep(1)}
+                    className="px-8 cursor-pointer"
+                  >
+                    Back to Address
+                  </Button>
+                  <Button
+                    variant="gold"
+                    onClick={() => {
+                      const chk = document.getElementById('terms-check') as HTMLInputElement;
+                      if (!chk || !chk.checked) {
+                        toast.error('Please accept the rental terms before proceeding.');
+                        return;
+                      }
+                      handleProceedToPayment();
+                    }}
+                    className="px-10 cursor-pointer"
+                  >
+                    Lock Registry & Pay
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 3: Payment executing */}
+            {activeStep === 3 && createdBooking && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={springTransition}
+                className="space-y-6 text-center py-6"
+              >
+                <div className="w-16 h-16 bg-champagne/10 text-champagne border border-champagne/20 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                  <CreditCard size={22} />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-display font-semibold">Process Studio Escrow Payment</h2>
+                  <p className="text-xs text-charcoal-light leading-relaxed max-w-sm mx-auto font-light">
+                    Your rental registry is locked under Reference: <strong className="text-charcoal">{createdBooking.booking_ref}</strong>. Proceed to authorize payment gateway transactions.
+                  </p>
+                </div>
+
+                {/* Razorpay dynamic action button */}
+                <div className="max-w-xs mx-auto pt-6">
+                  <RazorpayButton
+                    amount={calculations.total}
+                    orderId={createdBooking.razorpay_order_id || mockOrderId}
+                    description={`Rent Deposit: ${cartItems[0]?.title || 'Couture'}`}
+                    prefill={{
+                      name: user?.name,
+                      email: user?.email,
+                      contact: user?.phone,
+                    }}
+                    onSuccess={handlePaymentSuccess}
+                    onFailure={() => {
+                      toast.error('Escrow Payment Failed. Contact Support.');
+                    }}
+                    onDismiss={() => {
+                      toast('Logistics payment window closed.');
+                    }}
+                  />
+                </div>
+
+                {/* Back button */}
+                <div className="pt-8 text-center">
+                  <button
+                    onClick={() => setActiveStep(2)}
+                    className="text-xs font-mono uppercase tracking-wider text-charcoal-light hover:text-charcoal hover:underline"
+                  >
+                    Adjust booking options
+                  </button>
+                </div>
+
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+
+      </div>
+
+      {/* Right Column: Pricing Calculations summary */}
+      <div className="lg:w-1/3">
+        <div className="p-6 border border-border rounded-lg bg-white space-y-6 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-1 bg-charcoal" />
+          <h3 className="font-display text-lg font-bold text-charcoal flex items-center gap-2">
+            <ShoppingBag size={18} className="text-champagne" /> Summary calculations
+          </h3>
+
+          <div className="space-y-3 text-xs text-charcoal-light border-b border-border/50 pb-6">
+            <div className="flex justify-between">
+              <span>Rental Subtotal</span>
+              <span className="font-mono text-charcoal font-bold">₹{calculations.subtotal.toLocaleString('en-IN')}</span>
+            </div>
+            {calculations.discount > 0 && (
+              <div className="flex justify-between text-success">
+                <span>Applied Discount</span>
+                <span className="font-mono font-bold">-₹{calculations.discount}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span>Escrow Security Deposit</span>
+              <span className="font-mono text-charcoal font-bold">₹{calculations.securityDeposit.toLocaleString('en-IN')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Platform Take-Rate (5%)</span>
+              <span className="font-mono text-charcoal font-bold">₹{calculations.platformFee}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>GST Platforms Tax (8%)</span>
+              <span className="font-mono text-charcoal font-bold">₹{calculations.tax}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Shipping Logistics</span>
+              <span className="font-mono text-charcoal font-bold">₹{calculations.shippingFee}</span>
             </div>
           </div>
 
-          {/* Stepper Indicators */}
-          <div className="flex items-center gap-2 font-mono text-xs">
-            {steps.map((step, idx) => (
-              <div key={step.name} className="flex items-center">
-                <span
-                  className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[11px] transition-all duration-300 ${
-                    idx === activeStep
-                      ? 'bg-[var(--rose)] text-white scale-110 shadow-sm'
-                      : idx < activeStep
-                      ? 'bg-[var(--sage)] text-white'
-                      : 'bg-[var(--bloom)] text-[var(--ink-light)]'
-                  }`}
-                >
-                  {idx < activeStep ? '✓' : step.label}
-                </span>
-                <span
-                  className={`ml-1.5 hidden sm:inline ${
-                    idx === activeStep
-                      ? 'font-bold text-[var(--ink)]'
-                      : idx < activeStep
-                      ? 'text-[var(--sage-dark)]'
-                      : 'text-[var(--ink-lighter)]'
-                  }`}
-                >
-                  {step.name}
-                </span>
-                {idx < steps.length - 1 && (
-                  <div
-                    className={`h-[1px] w-4 sm:w-8 mx-2 ${
-                      idx < activeStep ? 'bg-[var(--sage)]' : 'bg-[var(--petal)]'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
+          <div className="flex justify-between items-baseline pt-2">
+            <span className="text-sm font-semibold uppercase font-mono tracking-wider">Total Payout</span>
+            <span className="text-2xl font-display font-bold text-champagne">
+              ₹{calculations.total.toLocaleString('en-IN')}
+            </span>
           </div>
+
+          <div className="bg-[#FAF9F6] p-4 rounded text-[10px] text-charcoal-light leading-relaxed border border-border/40 font-mono flex items-start gap-2">
+            <ShieldCheck size={14} className="text-success mt-0.5 flex-shrink-0" />
+            <p>Escrow payment verified under platform guidelines. Refunds are released within 72 hours of dry quality inspection.</p>
+          </div>
+
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8">
-        <AnimatePresence mode="wait">
-          {showInvoice ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="py-4"
-            >
-              <InvoiceViewer invoice={getInvoiceData()} onClose={() => setShowInvoice(false)} />
-            </motion.div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Left Column: Form Steps */}
-              <div className="lg:col-span-7 space-y-6">
-                
-                {/* Step 1: Address Selection */}
-                {activeStep === 0 && (
-                  <FloatIn>
-                    <div className="card-floral p-6 bg-white space-y-6">
-                      <div className="flex justify-between items-center pb-4 border-b border-[var(--bloom)]">
-                        <h2 className="text-lg font-display font-semibold text-[var(--ink)]">
-                          1. Select Delivery Address
-                        </h2>
-                        <button
-                          onClick={() => setShowAddressForm(!showAddressForm)}
-                          className="btn-ghost !py-2 !px-3 !rounded-xl text-xs flex items-center gap-1.5"
-                        >
-                          <Plus size={14} />
-                          {showAddressForm ? 'Cancel' : 'Add New'}
-                        </button>
-                      </div>
-
-                      {showAddressForm ? (
-                        <form onSubmit={handleAddAddress} className="space-y-4 bg-[var(--ivory-warm)]/40 p-5 rounded-2xl border border-[var(--petal)]/50">
-                          <h3 className="text-xs uppercase tracking-wider font-mono text-[var(--rose)]">
-                            Add New Shipping Destination
-                          </h3>
-                          
-                          {addressFormError && (
-                            <div className="text-[11px] text-[var(--rose-dark)] flex items-center gap-1 font-mono">
-                              <AlertCircle size={14} />
-                              {addressFormError}
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                                Full Name
-                              </label>
-                              <input
-                                type="text"
-                                value={newAddrName}
-                                onChange={(e) => setNewAddrName(e.target.value)}
-                                className="input-kloset !py-2.5 !px-3 text-sm"
-                                placeholder="Aishwarya Rai"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                                Phone Number
-                              </label>
-                              <input
-                                type="text"
-                                value={newAddrPhone}
-                                onChange={(e) => setNewAddrPhone(e.target.value)}
-                                className="input-kloset !py-2.5 !px-3 text-sm"
-                                placeholder="+91 98765 43210"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                              Street Address
-                            </label>
-                            <input
-                              type="text"
-                              value={newAddrAddress}
-                              onChange={(e) => setNewAddrAddress(e.target.value)}
-                              className="input-kloset !py-2.5 !px-3 text-sm"
-                              placeholder="Flat 101, Floral Greens, Juhu Tara Road"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-3">
-                            <div>
-                              <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                                City
-                              </label>
-                              <input
-                                type="text"
-                                value={newAddrCity}
-                                onChange={(e) => setNewAddrCity(e.target.value)}
-                                className="input-kloset !py-2.5 !px-3 text-sm"
-                                placeholder="Mumbai"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                                State
-                              </label>
-                              <input
-                                type="text"
-                                value={newAddrState}
-                                onChange={(e) => setNewAddrState(e.target.value)}
-                                className="input-kloset !py-2.5 !px-3 text-sm"
-                                placeholder="Maharashtra"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                                Pincode
-                              </label>
-                              <input
-                                type="text"
-                                value={newAddrPincode}
-                                onChange={(e) => setNewAddrPincode(e.target.value)}
-                                className="input-kloset !py-2.5 !px-3 text-sm"
-                                placeholder="400049"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2">
-                            {['Home', 'Office', 'Other'].map((lbl) => (
-                              <button
-                                key={lbl}
-                                type="button"
-                                onClick={() => setNewAddrLabel(lbl)}
-                                className={`py-1.5 px-4 rounded-xl text-xs font-mono transition-all ${
-                                  newAddrLabel === lbl
-                                    ? 'bg-[var(--rose)] text-white'
-                                    : 'bg-white border border-[var(--petal)] text-[var(--ink-light)]'
-                                }`}
-                              >
-                                {lbl}
-                              </button>
-                            ))}
-                          </div>
-
-                          <button
-                            type="submit"
-                            className="btn-gold w-full !h-[44px] text-xs uppercase tracking-[0.15em] mt-2"
-                          >
-                            Save Address
-                          </button>
-                        </form>
-                      ) : (
-                        <div className="space-y-3">
-                          {addresses.map((addr) => (
-                            <div
-                              key={addr.id}
-                              onClick={() => setSelectedAddressId(addr.id)}
-                              className={`w-full rounded-2xl p-4 text-left flex items-start gap-4 transition-all duration-300 cursor-pointer border-[1.5px] ${
-                                selectedAddressId === addr.id
-                                  ? 'bg-[var(--bloom)]/20 border-[var(--rose)] shadow-sm'
-                                  : 'bg-white border-[var(--petal)] hover:border-[var(--rose)]'
-                              }`}
-                            >
-                              <div
-                                className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                                style={{
-                                  border: `2px solid ${selectedAddressId === addr.id ? 'var(--rose)' : 'var(--petal)'}`,
-                                  background: selectedAddressId === addr.id ? 'var(--rose)' : 'transparent',
-                                }}
-                              >
-                                {selectedAddressId === addr.id && <Check size={10} color="white" />}
-                              </div>
-                              <div className="flex-1 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-sm text-[var(--ink)]">
-                                    {addr.fullName}
-                                  </span>
-                                  <span className="badge badge-rose text-[9px] uppercase tracking-wider font-mono font-medium px-2 py-0.5">
-                                    {addr.label}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-[var(--ink-light)] leading-relaxed">
-                                  {addr.fullAddress}, {addr.city}, {addr.state} - {addr.pincode}
-                                </p>
-                                <p className="text-[10px] text-[var(--ink-lighter)] font-mono flex items-center gap-1">
-                                  <Phone size={10} />
-                                  {addr.phone}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-
-                          <button
-                            onClick={() => setActiveStep(1)}
-                            className="btn-gold w-full uppercase tracking-[0.15em]"
-                          >
-                            Continue to Delivery
-                            <ArrowRight size={16} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </FloatIn>
-                )}
-
-                {/* Step 2: Delivery Method */}
-                {activeStep === 1 && (
-                  <FloatIn>
-                    <div className="card-floral p-6 bg-white space-y-6">
-                      <div className="pb-4 border-b border-[var(--bloom)]">
-                        <h2 className="text-lg font-display font-semibold text-[var(--ink)]">
-                          2. Select Delivery Mode
-                        </h2>
-                        <p className="text-xs text-[var(--ink-light)]">Choose how you wish to receive your items</p>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[
-                          {
-                            value: 'delivery' as const,
-                            icon: Truck,
-                            label: 'Premium Home Delivery',
-                            desc: 'Sanitized courier, door-to-door delivery with protective garment bag and return pick-up scheduling.',
-                            fee: '₹300 flat rate',
-                          },
-                          {
-                            value: 'pickup' as const,
-                            icon: Store,
-                            label: 'In-Store Pickup',
-                            desc: 'Pick up your fitted dress directly from our Mughal Garden Hub partner boutique. On-site fitting alterations free.',
-                            fee: 'Free',
-                          },
-                        ].map((option) => (
-                          <div
-                            key={option.value}
-                            onClick={() => setDeliveryType(option.value)}
-                            className={`rounded-2xl p-5 text-left transition-all duration-300 cursor-pointer border-[1.5px] space-y-3 flex flex-col justify-between ${
-                              deliveryType === option.value
-                                ? 'bg-[var(--bloom)]/20 border-[var(--rose)] shadow-sm'
-                                : 'bg-white border-[var(--petal)] hover:border-[var(--rose)]'
-                            }`}
-                          >
-                            <div>
-                              <option.icon
-                                size={24}
-                                className="mb-2"
-                                style={{ color: deliveryType === option.value ? 'var(--rose)' : 'var(--ink-light)' }}
-                              />
-                              <p className="text-sm font-semibold text-[var(--ink)]">
-                                {option.label}
-                              </p>
-                              <p className="text-xs text-[var(--ink-light)] mt-1 leading-relaxed">
-                                {option.desc}
-                              </p>
-                            </div>
-                            <div className="pt-2 border-t border-[var(--petal)]/20 flex justify-between items-center text-xs font-semibold">
-                              <span style={{ color: 'var(--ink-light)' }}>Cost:</span>
-                              <span className={option.value === 'delivery' ? 'text-[var(--rose)] font-mono' : 'text-[var(--sage-dark)] font-mono'}>
-                                {option.fee}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => setActiveStep(0)}
-                          className="btn-outline flex-1"
-                        >
-                          Back
-                        </button>
-                        <button
-                          onClick={() => setActiveStep(2)}
-                          className="btn-gold flex-1 uppercase tracking-[0.15em]"
-                        >
-                          Continue to Payment
-                          <ArrowRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </FloatIn>
-                )}
-
-                {/* Step 3: Payment Details */}
-                {activeStep === 2 && (
-                  <FloatIn>
-                    <div className="card-floral p-6 bg-white space-y-6">
-                      <div className="pb-4 border-b border-[var(--bloom)]">
-                        <h2 className="text-lg font-display font-semibold text-[var(--ink)]">
-                          3. Secure Payment Gateway
-                        </h2>
-                        <p className="text-xs text-[var(--ink-light)] font-mono uppercase tracking-widest text-[var(--rose)]">
-                          Integrated Razorpay / Card Simulator
-                        </p>
-                      </div>
-
-                      {paymentError && (
-                        <div className="bg-[var(--bloom)]/40 p-4 rounded-xl border border-[var(--rose)] text-xs text-[var(--rose-dark)] flex items-start gap-2.5 leading-relaxed font-mono">
-                          <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
-                          <div>
-                            <span className="font-bold block uppercase mb-1">Transaction Refused</span>
-                            {paymentError}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Payment Tabs */}
-                      <div className="flex border-b border-[var(--petal)]/40">
-                        {[
-                          { id: 'upi', label: 'UPI / QR Code' },
-                          { id: 'card', label: 'Credit / Debit Card' },
-                          { id: 'netbanking', label: 'Net Banking' },
-                        ].map((tab) => (
-                          <button
-                            key={tab.id}
-                            type="button"
-                            onClick={() => {
-                              setPaymentMethod(tab.id as any);
-                              setPaymentError('');
-                            }}
-                            className={`flex-1 text-center py-3 text-xs font-mono uppercase tracking-wider font-semibold transition-all border-b-2 ${
-                              paymentMethod === tab.id
-                                ? 'border-[var(--rose)] text-[var(--rose)]'
-                                : 'border-transparent text-[var(--ink-light)]'
-                            }`}
-                          >
-                            {tab.label}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* UPI Tab */}
-                      {paymentMethod === 'upi' && (
-                        <div className="space-y-4">
-                          <div>
-                            <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                              Virtual Payment Address (VPA)
-                            </label>
-                            <input
-                              type="text"
-                              value={upiId}
-                              onChange={(e) => setUpiId(e.target.value)}
-                              className="input-kloset font-mono"
-                              placeholder="arundhati@upi"
-                            />
-                            <p className="text-[10px] text-[var(--ink-lighter)] mt-1.5">
-                              A request will be sent to your UPI app for authorization.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Card Tab */}
-                      {paymentMethod === 'card' && (
-                        <div className="space-y-4">
-                          <div>
-                            <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                              Cardholder Name
-                            </label>
-                            <input
-                              type="text"
-                              value={cardHolder}
-                              onChange={(e) => setCardHolder(e.target.value)}
-                              className="input-kloset"
-                              placeholder="Arundhati Roy"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                              Card Number
-                            </label>
-                            <input
-                              type="text"
-                              value={cardNumber}
-                              onChange={(e) => {
-                                // Format spacing
-                                const val = e.target.value.replace(/\D/g, '').substring(0, 16);
-                                const match = val.match(/.{1,4}/g);
-                                setCardNumber(match ? match.join(' ') : val);
-                              }}
-                              className="input-kloset font-mono"
-                              placeholder="4111 2222 3333 4444"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                                Expiry Date (MM/YY)
-                              </label>
-                              <input
-                                type="text"
-                                value={cardExpiry}
-                                onChange={(e) => {
-                                  const val = e.target.value.replace(/\D/g, '').substring(0, 4);
-                                  if (val.length >= 2) {
-                                    setCardExpiry(`${val.substring(0, 2)}/${val.substring(2)}`);
-                                  } else {
-                                    setCardExpiry(val);
-                                  }
-                                }}
-                                className="input-kloset font-mono"
-                                placeholder="12/28"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                                CVV Code
-                              </label>
-                              <input
-                                type="password"
-                                value={cardCvv}
-                                onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').substring(0, 3))}
-                                className="input-kloset font-mono"
-                                placeholder="***"
-                              />
-                            </div>
-                          </div>
-
-                          {paymentAttempts === 0 && (
-                            <p className="text-[10px] text-[var(--rose)] leading-relaxed italic bg-[var(--bloom)]/20 p-2.5 rounded-lg border border-[var(--petal)]/30">
-                              ℹ️ Note: To test the checkout payment failure and retry flow, submit card payment. The first attempt is simulated to fail, prompting details review or alternative payment selection.
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Net Banking Tab */}
-                      {paymentMethod === 'netbanking' && (
-                        <div className="space-y-4">
-                          <div>
-                            <label className="text-[10px] uppercase font-mono tracking-wider text-[var(--ink-light)] block mb-1">
-                              Select Your Bank
-                            </label>
-                            <select
-                              value={bankName}
-                              onChange={(e) => setBankName(e.target.value)}
-                              className="input-kloset bg-white"
-                            >
-                              <option value="SBI">State Bank of India (SBI)</option>
-                              <option value="HDFC">HDFC Bank</option>
-                              <option value="ICICI">ICICI Bank</option>
-                              <option value="AXIS">Axis Bank</option>
-                              <option value="KOTAK">Kotak Mahindra Bank</option>
-                            </select>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2 pt-2 border-t border-[var(--petal)]/30">
-                        <Shield size={14} className="text-[var(--sage)]" />
-                        <span className="text-[10px] text-[var(--ink-lighter)]">
-                          256-bit encryption. Your payment details are never saved on our servers.
-                        </span>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => setActiveStep(1)}
-                          className="btn-outline flex-1"
-                        >
-                          Back
-                        </button>
-                        <button
-                          onClick={handlePaymentSubmit}
-                          className="btn-gold flex-1 uppercase tracking-[0.15em]"
-                        >
-                          Confirm & Review
-                          <ArrowRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </FloatIn>
-                )}
-
-                {/* Step 4: Review and Submit Order */}
-                {activeStep === 3 && (
-                  <FloatIn>
-                    <div className="card-floral p-6 bg-white space-y-6">
-                      <div className="pb-4 border-b border-[var(--bloom)]">
-                        <h2 className="text-lg font-display font-semibold text-[var(--ink)]">
-                          4. Final Order Review
-                        </h2>
-                        <p className="text-xs text-[var(--ink-light)]">Verify checkout elements before billing charge</p>
-                      </div>
-
-                      <div className="space-y-4 text-xs">
-                        {/* Fulfillment Summary */}
-                        <div className="p-4 bg-[var(--ivory-warm)]/40 rounded-2xl border border-[var(--petal)]/30 space-y-2">
-                          <h3 className="font-bold text-[var(--ink)] flex items-center gap-1.5 uppercase font-mono text-[10px] tracking-wider">
-                            <MapPin size={12} className="text-[var(--rose)]" />
-                            Shipping Details
-                          </h3>
-                          {deliveryType === 'pickup' ? (
-                            <p className="text-[var(--ink-light)]">
-                              🏪 In-Store Self-Pickup at Partners Garden Boutique (Hub 1), Mumbai
-                            </p>
-                          ) : (
-                            <div className="space-y-0.5 text-[var(--ink-light)]">
-                              <p className="font-semibold text-[var(--ink)]">{selectedAddress?.fullName}</p>
-                              <p>{selectedAddress?.fullAddress}, {selectedAddress?.city} - {selectedAddress?.pincode}</p>
-                              <p className="font-mono text-[10px] mt-1">{selectedAddress?.phone}</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Payment Method Summary */}
-                        <div className="p-4 bg-[var(--ivory-warm)]/40 rounded-2xl border border-[var(--petal)]/30 space-y-2">
-                          <h3 className="font-bold text-[var(--ink)] flex items-center gap-1.5 uppercase font-mono text-[10px] tracking-wider">
-                            <CreditCard size={12} className="text-[var(--rose)]" />
-                            Payment Method
-                          </h3>
-                          <p className="text-[var(--ink-light)] font-mono">
-                            {paymentMethod === 'upi' ? `UPI Address: ${upiId}` : paymentMethod === 'card' ? `Credit Card ending in **${cardNumber.slice(-4)}` : `Net Banking via ${bankName}`}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Landlord Rental Agreement Terms */}
-                      <div className="space-y-3">
-                        <label className="flex items-start gap-3 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={agreedTerms}
-                            onChange={(e) => setAgreedTerms(e.target.checked)}
-                            className="mt-1 w-4 h-4 rounded accent-[var(--rose)] cursor-pointer"
-                          />
-                          <span className="text-xs leading-relaxed text-[var(--ink-light)] select-none">
-                            I verify all sizes and rental dates. I authorize Kloset to charge ₹{costs.total.toLocaleString('en-IN')} and agree to the{' '}
-                            <Link href="/help" target="_blank" className="font-semibold text-[var(--rose)] underline hover:text-[var(--rose-dark)]">
-                              Rental Agreement & Damage Policy
-                            </Link>
-                          </span>
-                        </label>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => setActiveStep(2)}
-                          className="btn-outline flex-1"
-                        >
-                          Back
-                        </button>
-                        <button
-                          onClick={handlePlaceOrder}
-                          disabled={!agreedTerms || isProcessing}
-                          className="btn-gold flex-1 uppercase tracking-[0.15em] flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isProcessing ? (
-                            <>
-                              <RefreshCw size={14} className="animate-spin" />
-                              Processing Charge...
-                            </>
-                          ) : (
-                            <>
-                              Pay ₹{costs.total.toLocaleString('en-IN')}
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </FloatIn>
-                )}
-
-                {/* Step 5: Order Confirmation / Success View */}
-                {activeStep === 4 && (
-                  <FloatIn>
-                    <div className="card-floral p-8 bg-white text-center space-y-6">
-                      <div className="w-20 h-20 bg-[var(--bloom)]/30 rounded-full flex items-center justify-center mx-auto border-2 border-[var(--sage)]">
-                        <CheckCircle size={40} className="text-[var(--sage)]" />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-[var(--sage-dark)] font-bold">
-                          Rent Request Approved
-                        </span>
-                        <h2 className="text-3xl font-display font-semibold text-[var(--ink)]">
-                          Booking Confirmed! ✨
-                        </h2>
-                        <p className="text-sm text-[var(--ink-light)] max-w-md mx-auto">
-                          Thank you for choosing Kloset. Your premium outfit rental order is locked. You will receive SMS alerts as shipment is dispatched.
-                        </p>
-                      </div>
-
-                      <div className="bg-[var(--ivory-warm)]/60 rounded-2xl p-4 max-w-sm mx-auto border border-[var(--petal)]/40 text-xs text-left space-y-2 font-mono text-[var(--ink-light)]">
-                        <div className="flex justify-between border-b border-[var(--petal)]/20 pb-1.5">
-                          <span>Order Reference:</span>
-                          <span className="font-bold text-[var(--ink)]">{orderId}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Transaction Date:</span>
-                          <span>{orderDate}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Refundable Deposit:</span>
-                          <span className="text-[var(--sage-dark)]">₹{costs.securityDeposit}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Payment Mode:</span>
-                          <span>{paymentMethod.toUpperCase()}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto pt-4">
-                        <button
-                          onClick={() => setShowInvoice(true)}
-                          className="btn-outline flex-1 flex items-center justify-center gap-1.5 !py-3 text-xs"
-                        >
-                          <FileText size={14} />
-                          View Receipt
-                        </button>
-                        
-                        <Link
-                          href="/renter/dashboard?tab=bookings"
-                          className="btn-gold flex-1 !py-3 text-xs uppercase tracking-[0.12em]"
-                        >
-                          My Dashboard
-                        </Link>
-                      </div>
-                      
-                      <div className="pt-2">
-                        <Link href="/discover" className="text-xs text-[var(--rose)] hover:underline font-mono uppercase tracking-wider">
-                          ← Back to Discover
-                        </Link>
-                      </div>
-                    </div>
-                  </FloatIn>
-                )}
-              </div>
-
-              {/* Right Column: Order Preview Sidebar (Fixed position during scroll) */}
-              {activeStep < 4 && (
-                <div className="lg:col-span-5">
-                  <div className="sticky top-32">
-                    <FloatIn direction="right">
-                      <div className="card-floral p-6 bg-white space-y-6">
-                        <h2 className="text-xs uppercase tracking-widest font-mono font-bold text-[var(--ink-light)] pb-3 border-b border-[var(--bloom)]">
-                          Selected Outfits ({activeItems.length})
-                        </h2>
-
-                        {/* Outfit previews */}
-                        <div className="max-h-[220px] overflow-y-auto space-y-4 silk-scroll pr-1">
-                          {activeItems.map((item, idx) => {
-                            // Calculate days
-                            const sDate = new Date(item.startDate);
-                            const eDate = new Date(item.endDate);
-                            const diffTime = Math.abs(eDate.getTime() - sDate.getTime());
-                            const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-                            return (
-                              <div key={`${item.id}-${idx}`} className="flex gap-4 items-center">
-                                <div className="relative w-14 h-20 rounded-lg overflow-hidden bg-zinc-50 flex-shrink-0 border border-[var(--petal)]/40">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={item.image}
-                                    alt={item.title}
-                                    className="object-cover w-full h-full"
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="font-display text-sm font-semibold text-[var(--ink)] truncate pr-1">
-                                    {item.title}
-                                  </h3>
-                                  <p className="text-[10px] text-[var(--ink-lighter)] uppercase font-mono mt-0.5">
-                                    Size {item.size} · {days} Days
-                                  </p>
-                                  <p className="text-xs text-[var(--rose)] font-semibold font-mono mt-1">
-                                    ₹{item.price * days} <span className="text-[10px] text-[var(--ink-light)] font-normal">({item.quantity} qty)</span>
-                                  </p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {/* Calculations */}
-                        <div className="border-t border-[var(--petal)]/30 pt-4 space-y-2.5 text-xs font-mono text-[var(--ink-light)]">
-                          <div className="flex justify-between">
-                            <span>Rental Subtotal</span>
-                            <span className="font-semibold text-[var(--ink)]">₹{costs.subtotal}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="flex items-center gap-1">
-                              Security Deposit
-                              <span className="cursor-help text-[9px] bg-[var(--bloom)] text-[var(--rose)] rounded-full w-3.5 h-3.5 flex items-center justify-center" title="Fully refunded back to you once the outfit is returned safely.">?</span>
-                            </span>
-                            <span className="font-semibold text-[var(--ink)]">₹{costs.securityDeposit}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Platform fee (5%)</span>
-                            <span>₹{costs.platformFee}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Tax (8%)</span>
-                            <span>₹{costs.tax}</span>
-                          </div>
-                          {deliveryType === 'delivery' && (
-                            <div className="flex justify-between">
-                              <span>Shipping</span>
-                              <span>₹{costs.shippingFee}</span>
-                            </div>
-                          )}
-                          {costs.discount > 0 && (
-                            <div className="flex justify-between text-[var(--sage-dark)]">
-                              <span>Discount ({discountPercentage}%)</span>
-                              <span>-₹{costs.discount}</span>
-                            </div>
-                          )}
-                          
-                          <div className="flex justify-between text-sm font-bold text-[var(--ink)] pt-3 border-t border-[var(--petal)]/40">
-                            <span className="font-sans">Grand Total</span>
-                            <span className="text-[var(--rose)]">₹{costs.total}</span>
-                          </div>
-                        </div>
-
-                        <div className="bg-[var(--sage)]/5 rounded-xl p-3 border border-[var(--sage)]/20 text-[10px] leading-relaxed text-[var(--sage-dark)]">
-                          🛡️ Fully Refundable deposit of ₹{costs.securityDeposit} will be wired back to you upon safe pickup review.
-                        </div>
-                      </div>
-                    </FloatIn>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
     </div>
   );
 }

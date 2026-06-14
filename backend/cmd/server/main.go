@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/kloset/backend/internal/admin"
+	"github.com/kloset/backend/internal/ai"
 	"github.com/kloset/backend/internal/auth"
 	"github.com/kloset/backend/internal/booking"
 	"github.com/kloset/backend/internal/config"
@@ -212,6 +213,17 @@ func main() {
 	supportHandler.RegisterRoutes(api, authMw, adminMw)
 	adminHandler.RegisterRoutes(api, authMw, adminMw)
 	monitoringHandler.RegisterRoutes(app, api, authMw, adminMw)
+
+	// ─── AI Module ────────────────────────────
+	aiService, aiErr := ai.NewService(cfg)
+	if aiErr != nil {
+		log.Error().Err(aiErr).Msg("Failed to initialize AI service")
+	} else {
+		aiHandler := ai.NewHandler(aiService)
+		aiHandler.RegisterRoutes(api, authMw)
+		defer aiService.Close()
+		log.Info().Msg("🤖 AI Stylist service initialized")
+	}
 
 	// ─── Logging Routes ────────────────────────
 	loggingHandler := logging.NewHandler(logService)

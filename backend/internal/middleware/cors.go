@@ -7,6 +7,12 @@ import (
 
 // CORSMiddleware configures CORS for the API
 func CORSMiddleware(frontendURL string) fiber.Handler {
+	// Security: Fiber panics if AllowCredentials=true and AllowOrigins is "*" or empty.
+	// Validate and fallback to a safe default to prevent deployment crashes.
+	if frontendURL == "" || frontendURL == "*" {
+		frontendURL = "http://localhost:3000"
+	}
+
 	return cors.New(cors.Config{
 		AllowOrigins:     frontendURL,
 		AllowMethods:     "GET,POST,PUT,DELETE,PATCH,OPTIONS",

@@ -20,16 +20,16 @@ export interface UploadProgress {
 
 /**
  * Upload an image to Cloudinary using unsigned upload preset.
- * In dev mode with no credentials, falls back to returning a placeholder URL.
+ * In development / demo mode, falls back to returning a mock URL after delay.
  */
 export async function uploadImage(
   file: File,
   onProgress?: (progress: UploadProgress) => void,
   folder = 'kloset/outfits'
 ): Promise<CloudinaryUploadResult> {
-  // Dev mode fallback: if using demo cloud name, return a mock result
+  
   if (CLOUD_NAME === 'demo' || CLOUD_NAME === 'your_cloud_name') {
-    // Simulate upload delay
+    // Simulate network latency for dev environment
     await new Promise((resolve) => setTimeout(resolve, 1200));
     onProgress?.({ loaded: 100, total: 100, percentage: 100 });
 
@@ -96,7 +96,7 @@ export function getOptimizedUrl(
   } = {}
 ): string {
   if (CLOUD_NAME === 'demo' || CLOUD_NAME === 'your_cloud_name') {
-    return publicId; // In dev mode, publicId is already a URL
+    return publicId; // In dev mode, publicId is a local Object URL
   }
 
   const { width = 800, height, quality = 80, format = 'auto', crop = 'fill' } = options;
@@ -114,7 +114,7 @@ export function getOptimizedUrl(
 }
 
 /**
- * Validate image file before upload.
+ * Validate image files before uploading.
  */
 export function validateImageFile(file: File): string | null {
   const MAX_SIZE = 10 * 1024 * 1024; // 10MB
