@@ -286,7 +286,7 @@ export default function Homepage() {
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
-                      <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase">
+                      <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-[52px] px-6 text-[10px] font-mono tracking-widest uppercase">
                         Quick View
                       </Link>
                     </motion.div>
@@ -424,7 +424,7 @@ export default function Homepage() {
                   whileTap={{ scale: 0.97 }}
                   transition={springTransition}
                   className={`
-                    px-6 h-11 rounded-full text-xs font-mono uppercase tracking-wider transition-colors duration-300 font-bold border cursor-pointer
+                    px-6 h-[52px] rounded-full text-xs font-mono uppercase tracking-wider transition-colors duration-300 font-bold border cursor-pointer
                     ${active 
                       ? 'bg-charcoal text-ivory border-charcoal' 
                       : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:text-charcoal'
@@ -466,7 +466,7 @@ export default function Homepage() {
                     {/* Hover Link */}
                     <div className="absolute inset-0 bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
-                        <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase">
+                        <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-[52px] px-6 text-[10px] font-mono tracking-widest uppercase">
                           Book Outfit
                         </Link>
                       </motion.div>
@@ -585,7 +585,7 @@ export default function Homepage() {
                   </div>
                 </div>
                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={springTransition}>
-                  <Link href="/discover" className="w-11 h-11 border border-border rounded-full flex items-center justify-center hover:bg-champagne hover:text-white transition-colors cursor-pointer text-charcoal">
+                  <Link href="/discover" className="w-[52px] h-[52px] border border-border rounded-full flex items-center justify-center hover:bg-champagne hover:text-white transition-colors cursor-pointer text-charcoal">
                     <ChevronRight size={18} />
                   </Link>
                 </motion.div>
@@ -642,7 +642,7 @@ export default function Homepage() {
                   {/* Hover view link */}
                   <div className="absolute inset-0 bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
-                      <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase">
+                      <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-[52px] px-6 text-[10px] font-mono tracking-widest uppercase">
                         Inspect
                       </Link>
                     </motion.div>
@@ -692,7 +692,7 @@ export default function Homepage() {
                       />
                       <div className="absolute inset-0 bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
-                          <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase">
+                          <Link href={`/outfit/${item.id}`} className="btn btn-gold !h-[52px] px-6 text-[10px] font-mono tracking-widest uppercase">
                             Inspect
                           </Link>
                         </motion.div>

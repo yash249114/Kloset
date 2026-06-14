@@ -34,8 +34,7 @@ export default function AdminSidebar() {
 
   return (
     <aside 
-      className="fixed left-0 top-0 bottom-0 w-[240px] bg-[#161616] text-[#E8E8E8] border-r border-[#2A2A2A] flex flex-col justify-between p-6 select-none font-sans"
-      style={{ zIndex: 100 }} // Strict z-index Hierarchy
+      className="fixed left-0 top-0 bottom-0 w-[240px] bg-[#161616] text-[#E8E8E8] border-r border-[#2A2A2A] flex flex-col justify-between p-6 select-none font-sans z-[100]"
     >
       <div className="space-y-8">
         
@@ -63,7 +62,7 @@ export default function AdminSidebar() {
                 key={item.path}
                 href={item.path}
                 className={`
-                  flex items-center gap-3 px-3.5 h-11 rounded text-[11px] font-mono uppercase tracking-wider transition-all duration-300 font-semibold
+                  flex items-center gap-3 px-3.5 h-[52px] rounded text-[11px] font-mono uppercase tracking-wider transition-all duration-300 font-semibold
                   ${isActive 
                     ? 'bg-[#2A2A2A] text-[#C9A96E] border-l-2 border-[#C9A96E]' 
                     : 'text-[#8C8C8C] hover:bg-[#1C1C1C] hover:text-[#E8E8E8]'
@@ -82,14 +81,14 @@ export default function AdminSidebar() {
       <div className="space-y-4 border-t border-[#2A2A2A] pt-6">
         <Link
           href="/"
-          className="flex items-center gap-3 px-3.5 h-11 rounded text-[11px] font-mono uppercase tracking-wider text-[#8C8C8C] hover:bg-[#1C1C1C] hover:text-[#E8E8E8] transition-colors font-bold"
+          className="flex items-center gap-3 px-3.5 h-[52px] rounded text-[11px] font-mono uppercase tracking-wider text-[#8C8C8C] hover:bg-[#1C1C1C] hover:text-[#E8E8E8] transition-colors font-bold"
         >
           <ArrowLeft size={14} />
           <span>Exit Hub</span>
         </Link>
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3 px-3.5 h-11 rounded text-[11px] font-mono uppercase tracking-wider text-[#8C8C8C] hover:bg-error/10 hover:text-error transition-colors font-bold cursor-pointer text-left"
+          className="w-full flex items-center gap-3 px-3.5 h-[52px] rounded text-[11px] font-mono uppercase tracking-wider text-[#8C8C8C] hover:bg-error/10 hover:text-error transition-colors font-bold cursor-pointer text-left"
         >
           <LogOut size={14} />
           <span>Logout</span>

@@ -286,7 +286,7 @@ export default function OutfitDetailPage() {
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
                 transition={springTransition}
-                className="absolute top-4 right-4 w-12 h-12 bg-white/80 backdrop-blur-sm hover:bg-white rounded-full flex items-center justify-center shadow-md border border-border/40 cursor-pointer"
+                className="absolute top-4 right-4 w-[52px] h-[52px] bg-white/80 backdrop-blur-sm hover:bg-white rounded-full flex items-center justify-center shadow-md border border-border/40 cursor-pointer"
                 title="Wishlist"
               >
                 <Heart
@@ -391,7 +391,7 @@ export default function OutfitDetailPage() {
                         whileTap={{ scale: 0.95 }}
                         transition={springTransition}
                         className={`
-                          w-12 h-12 rounded text-xs font-mono uppercase tracking-wider transition-colors duration-300 font-bold border cursor-pointer
+                          w-[52px] h-[52px] rounded text-xs font-mono uppercase tracking-wider transition-colors duration-300 font-bold border cursor-pointer
                           ${selectedSize === sz
                             ? 'bg-charcoal text-ivory border-charcoal'
                             : 'bg-white border-border text-charcoal hover:border-charcoal'
@@ -419,7 +419,7 @@ export default function OutfitDetailPage() {
                       whileTap={{ scale: 0.97 }}
                       transition={springTransition}
                       className={`
-                        h-12 rounded text-xs font-mono uppercase tracking-wider transition-colors duration-300 font-bold border cursor-pointer
+                        h-[52px] rounded text-xs font-mono uppercase tracking-wider transition-colors duration-300 font-bold border cursor-pointer
                         ${selectedDuration === days
                           ? 'bg-charcoal text-ivory border-charcoal'
                           : 'bg-white border-border text-charcoal hover:border-charcoal'

@@ -149,7 +149,7 @@ function DiscoverContent() {
               transition={springTransition}
               onClick={() => setCategory(category === opt.value ? '' : opt.value)}
               className={`
-                h-12 w-full px-4 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border text-left cursor-pointer
+                h-[52px] w-full px-4 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border text-left cursor-pointer
                 ${category === opt.value
                   ? 'bg-charcoal text-ivory border-charcoal'
                   : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:text-charcoal'
@@ -178,7 +178,7 @@ function DiscoverContent() {
                 transition={springTransition}
                 onClick={() => toggleOccasion(opt.value)}
                 className={`
-                  px-4 h-11 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border cursor-pointer
+                  px-4 h-[52px] rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border cursor-pointer
                   ${isSelected
                     ? 'bg-charcoal text-ivory border-charcoal'
                     : 'bg-white border-border text-charcoal-light hover:border-charcoal'
@@ -238,7 +238,7 @@ function DiscoverContent() {
                 transition={springTransition}
                 onClick={() => setPriceRange(isSelected ? null : { min: rng.min, max: rng.max })}
                 className={`
-                  h-12 w-full px-4 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border text-left cursor-pointer
+                  h-[52px] w-full px-4 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border text-left cursor-pointer
                   ${isSelected
                     ? 'bg-charcoal text-ivory border-charcoal'
                     : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:text-charcoal'
@@ -340,7 +340,7 @@ function DiscoverContent() {
               whileTap={{ scale: 0.97 }}
               transition={springTransition}
               onClick={() => setMobileFiltersOpen(true)}
-              className="flex items-center gap-2 h-12 px-6 border border-border rounded font-mono text-xs uppercase font-bold text-charcoal bg-white cursor-pointer"
+              className="flex items-center gap-2 h-[52px] px-6 border border-border rounded font-mono text-xs uppercase font-bold text-charcoal bg-white cursor-pointer"
             >
               <SlidersHorizontal size={14} /> Filter Options
             </motion.button>
@@ -404,7 +404,7 @@ function DiscoverContent() {
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
                           <Link
                             href={`/outfit/${item.id}`}
-                            className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase"
+                            className="btn btn-gold !h-[52px] px-6 text-[10px] font-mono tracking-widest uppercase"
                           >
                             View Details
                           </Link>
@@ -477,7 +477,7 @@ function DiscoverContent() {
                 <h3 className="font-display text-lg font-bold">Catalog Filters</h3>
                 <button
                   onClick={() => setMobileFiltersOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center border border-border hover:bg-ivory-dark rounded"
+                  className="w-[52px] h-[52px] flex items-center justify-center border border-border hover:bg-ivory-dark rounded"
                 >
                   <X size={14} />
                 </button>

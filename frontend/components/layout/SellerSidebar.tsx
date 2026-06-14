@@ -46,7 +46,7 @@ export default function SellerSidebar() {
                 key={item.path}
                 href={item.path}
                 className={`
-                  flex items-center gap-3.5 px-4 h-12 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-semibold
+                  flex items-center gap-3.5 px-4 h-[52px] rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-semibold
                   ${isActive 
                     ? 'bg-champagne text-charcoal shadow-sm' 
                     : 'text-charcoal-light hover:bg-charcoal-mid hover:text-ivory'
@@ -65,14 +65,14 @@ export default function SellerSidebar() {
       <div className="space-y-4 border-t border-charcoal-mid/40 pt-6">
         <Link
           href="/"
-          className="flex items-center gap-3.5 px-4 h-12 rounded text-xs font-mono uppercase tracking-wider text-charcoal-light hover:bg-charcoal-mid hover:text-ivory transition-colors font-bold"
+          className="flex items-center gap-3.5 px-4 h-[52px] rounded text-xs font-mono uppercase tracking-wider text-charcoal-light hover:bg-charcoal-mid hover:text-ivory transition-colors font-bold"
         >
           <ArrowLeft size={16} />
           <span>Exit Studio</span>
         </Link>
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3.5 px-4 h-12 rounded text-xs font-mono uppercase tracking-wider text-charcoal-light hover:bg-error/10 hover:text-error transition-colors font-bold cursor-pointer"
+          className="w-full flex items-center gap-3.5 px-4 h-[52px] rounded text-xs font-mono uppercase tracking-wider text-charcoal-light hover:bg-error/10 hover:text-error transition-colors font-bold cursor-pointer"
         >
           <LogOut size={16} />
           <span>Logout</span>

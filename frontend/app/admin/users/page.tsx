@@ -21,8 +21,15 @@ export default function AdminUsersPage() {
     r.email.toLowerCase().includes(query.toLowerCase())
   );
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans"
+    >
       
       {/* Header */}
       <div>
@@ -96,6 +103,6 @@ export default function AdminUsersPage() {
         </div>
       </Card>
 
-    </div>
+    </motion.div>
   );
 }

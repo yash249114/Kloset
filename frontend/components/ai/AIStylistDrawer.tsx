@@ -167,9 +167,9 @@ export default function AIStylistDrawer() {
                 <Bot size={13} />
               </div>
               <div className="p-3.5 rounded-lg bg-warm-white border border-border text-charcoal-mid rounded-tl-none font-light flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-champagne animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-full bg-champagne animate-bounce [animation-delay:0.2s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-champagne animate-bounce [animation-delay:0.4s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-champagne animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-champagne animate-pulse [animation-delay:0.2s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-champagne animate-pulse [animation-delay:0.4s]" />
               </div>
             </div>
           )}

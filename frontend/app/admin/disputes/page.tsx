@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { AlertCircle, Scale, RefreshCcw } from 'lucide-react';
 import { adminAPI, AdminDispute } from '@/lib/api';
 import Card from '@/components/ui/Card';
@@ -80,8 +81,15 @@ export default function AdminDisputesPage() {
     }
   };
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans"
+    >
       
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -108,44 +116,51 @@ export default function AdminDisputesPage() {
         <p className="text-xs text-charcoal-light py-6 text-center font-light">No escalated dispute cases active.</p>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {disputes.map((d) => (
-            <Card key={d.id} hoverEffect={false} padding="md" theme="admin" className="flex flex-col md:flex-row justify-between gap-6 items-start">
-              <div className="space-y-3 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] text-charcoal-light font-bold">Case Ref: {d.id}</span>
-                  <Badge variant={d.status === 'resolved' || d.status === 'closed' ? 'sage' : 'gold'}>
-                    {d.status}
-                  </Badge>
+          {disputes.map((d, index) => (
+            <motion.div
+              key={d.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...springTransition, delay: index * 0.05 }}
+            >
+              <Card hoverEffect={false} padding="md" theme="admin" className="flex flex-col md:flex-row justify-between gap-6 items-start w-full">
+                <div className="space-y-3 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] text-charcoal-light font-bold">Case Ref: {d.id}</span>
+                    <Badge variant={d.status === 'resolved' || d.status === 'closed' ? 'sage' : 'gold'}>
+                      {d.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <h4 className="font-display text-base font-bold text-[#E8E8E8]">
+                      {d.outfit_title}
+                    </h4>
+                    <p className="text-[10px] text-[#8C8C8C]">
+                      Customer: {d.renter_name} | Security deposit held: ₹{d.deposit_amount}
+                    </p>
+                  </div>
+                  <div className="p-3 border border-[#2A2A2A] bg-[#131313] rounded text-xs text-[#8C8C8C] space-y-1">
+                    <span className="font-bold text-[#C9A96E]">Dispute Reason: {d.reason}</span>
+                    <p className="leading-relaxed font-light">{d.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-display text-base font-bold text-[#E8E8E8]">
-                    {d.outfit_title}
-                  </h4>
-                  <p className="text-[10px] text-[#8C8C8C]">
-                    Customer: {d.renter_name} | Security deposit held: ₹{d.deposit_amount}
-                  </p>
-                </div>
-                <div className="p-3 border border-[#2A2A2A] bg-[#131313] rounded text-xs text-[#8C8C8C] space-y-1">
-                  <span className="font-bold text-[#C9A96E]">Dispute Reason: {d.reason}</span>
-                  <p className="leading-relaxed font-light">{d.description}</p>
-                </div>
-              </div>
 
-              {d.status === 'open' && (
-                <div className="self-end md:self-center flex-shrink-0">
-                  <Button
-                    variant="gold"
-                    onClick={() => {
-                      setSelectedDispute(d);
-                      setRefundAmount(d.deposit_amount);
-                    }}
-                    className="flex items-center gap-1.5 cursor-pointer text-xs font-mono uppercase"
-                  >
-                    <Scale size={14} /> Resolve Case
-                  </Button>
-                </div>
-              )}
-            </Card>
+                {d.status === 'open' && (
+                  <div className="self-end md:self-center flex-shrink-0">
+                    <Button
+                      variant="gold"
+                      onClick={() => {
+                        setSelectedDispute(d);
+                        setRefundAmount(d.deposit_amount);
+                      }}
+                      className="flex items-center gap-1.5 cursor-pointer text-xs font-mono uppercase"
+                    >
+                      <Scale size={14} /> Resolve Case
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
           ))}
         </div>
       )}
@@ -207,6 +222,6 @@ export default function AdminDisputesPage() {
         )}
       </Modal>
 
-    </div>
+      </motion.div>
   );
 }

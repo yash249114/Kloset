@@ -1,146 +1,146 @@
 'use client';
 
-import React, { Suspense, useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Check, Calendar, ArrowRight, Mail } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { CheckCircle2, Calendar, MapPin, ArrowRight, Sparkles } from 'lucide-react';
+import { bookingsAPI } from '@/lib/api';
+import type { Booking } from '@/types';
+import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import { toast } from 'sonner';
 
 const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
 function ConfirmationContent() {
-  const searchParams = useSearchParams() || new URLSearchParams();
-  const [ref, setRef] = useState('');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get('id');
+
+  const [booking, setBooking] = useState<Booking | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const urlRef = searchParams.get('ref');
-      if (urlRef) {
-        setRef(urlRef);
-      } else {
-        setRef(`KL-2026-${Math.floor(100000 + Math.random() * 900000)}`);
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [searchParams]);
+    if (!bookingId) {
+      toast.error('No booking reference found.');
+      router.push('/discover');
+      return;
+    }
+    loadBooking();
+  }, [bookingId]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-      },
-    },
+  const loadBooking = async () => {
+    setLoading(true);
+    try {
+      const data = await bookingsAPI.getById(bookingId!);
+      setBooking(data);
+    } catch {
+      toast.error('Failed to load booking confirmation details.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: springTransition 
-    },
-  };
+  if (loading) {
+    return (
+      <div className="bg-ivory min-h-screen pt-36 text-center font-mono text-xs text-charcoal-light">
+        <div className="animate-spin inline-block w-6 h-6 border-2 border-champagne rounded-full border-t-transparent mb-2" />
+        <p>Confirming Escrow Booking...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-xl mx-auto px-6 py-24 select-none font-sans text-charcoal">
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-8 text-center"
-      >
-        
-        {/* Animated Check avatar */}
+    <div className="bg-ivory min-h-screen pt-28 pb-16 font-sans text-charcoal select-none">
+      <div className="max-w-2xl mx-auto px-6">
         <motion.div
-          variants={itemVariants}
-          className="w-20 h-20 bg-success/10 text-success border border-success/30 rounded-full flex items-center justify-center mx-auto shadow-sm"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={springTransition}
+          className="text-center"
         >
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={springTransition}
+            transition={{ ...springTransition, delay: 0.1 }}
+            className="w-16 h-16 bg-success/10 text-success rounded-full flex items-center justify-center mx-auto mb-6"
           >
-            <Check size={36} className="text-success" />
+            <CheckCircle2 size={32} />
           </motion.div>
-        </motion.div>
 
-        {/* Title */}
-        <motion.div variants={itemVariants} className="space-y-2">
-          <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">
-            Escrow Payment Confirmed
-          </span>
-          <h1 className="text-3xl md:text-4xl font-display font-medium">
+          <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block mb-2">
             Booking Confirmed
-          </h1>
+          </span>
+          <h1 className="text-3xl font-display font-medium text-charcoal mb-2">Your Rental is Booked!</h1>
           <p className="text-xs text-charcoal-light font-mono">
-            Order Registry Reference: <strong className="text-charcoal">{ref}</strong>
+            Booking Reference: <strong className="text-charcoal">{booking?.booking_ref || bookingId}</strong>
           </p>
-        </motion.div>
 
-        {/* Summary Card */}
-        <motion.div variants={itemVariants}>
-          <Card hoverEffect={false} padding="md" className="bg-white border-border text-left relative overflow-hidden">
-            <div className="absolute top-0 inset-x-0 h-1 bg-success" />
-            <h3 className="font-mono text-xs uppercase tracking-widest font-bold text-charcoal mb-4 flex items-center gap-1.5">
-              <Calendar size={14} className="text-champagne" /> Upcoming Timelines
-            </h3>
-            
-            {/* Steps indicator */}
-            <div className="space-y-4 text-xs">
-              {[
-                { title: 'Bespoke Dry Cleaning', desc: 'Listing steam-sterilized and dry-cleaned under platform quality rules.', active: true },
-                { title: 'Quality Assurance Dispatch', desc: 'Transit verification by Kloset logistics specialists.', active: false },
-                { title: 'Doorstep Courier Delivery', desc: 'Secure hand-over at your shipping destination.', active: false },
-                { title: 'Couture Return Pickup', desc: 'We handle return pickup on the last day of rental.', active: false },
-              ].map((step, i) => (
-                <div key={i} className="flex gap-4 relative">
-                  {i < 3 && <div className="absolute left-[9px] top-5 bottom-[-16px] w-[1.5px] bg-border" />}
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono border-2 flex-shrink-0 ${
-                    step.active ? 'bg-success border-success text-white' : 'bg-white border-border text-charcoal-light'
-                  }`}>
-                    {step.active ? '✓' : i + 1}
+          {booking && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...springTransition, delay: 0.2 }}
+              className="mt-10 space-y-4 text-left"
+            >
+              <Card padding="md" className="bg-white border-border">
+                <div className="flex gap-4">
+                  <div className="w-20 h-24 rounded-lg overflow-hidden bg-ivory-dark flex-shrink-0">
+                    {booking.outfit?.images?.[0] ? (
+                      <img src={booking.outfit.images[0].url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[8px] text-charcoal-light/40">No Image</div>
+                    )}
                   </div>
-                  <div>
-                    <h4 className={`font-semibold ${step.active ? 'text-charcoal' : 'text-charcoal-light'}`}>{step.title}</h4>
-                    <p className="text-[10px] text-charcoal-light/80 mt-0.5 leading-relaxed font-light">{step.desc}</p>
+                  <div className="space-y-1">
+                    <h3 className="font-display text-sm font-semibold text-charcoal">{booking.outfit?.title || 'Couture Rental'}</h3>
+                    <p className="text-[10px] text-charcoal-light font-mono">Size: {booking.size_selected}</p>
+                    <p className="text-[10px] text-charcoal-light font-mono flex items-center gap-1">
+                      <Calendar size={10} className="text-champagne" />
+                      {new Date(booking.pickup_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} - {new Date(booking.return_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-charcoal-light font-mono flex items-center gap-1">
+                      <MapPin size={10} className="text-champagne" /> {booking.delivery_type === 'delivery' ? 'Home Delivery' : 'Self Pickup'}
+                    </p>
                   </div>
                 </div>
-              ))}
+              </Card>
+
+              <Card padding="md" className="bg-white border-border">
+                <div className="flex justify-between text-sm">
+                  <span className="text-charcoal-light">Total Amount</span>
+                  <span className="font-bold text-charcoal">₹{booking.total_amount.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-xs mt-2 pt-2 border-t border-border">
+                  <span className="text-charcoal-light">Security Deposit</span>
+                  <span className="font-bold text-charcoal">₹{booking.security_deposit.toLocaleString('en-IN')}</span>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springTransition, delay: 0.3 }}
+            className="mt-10 space-y-4"
+          >
+            <p className="text-xs text-charcoal-light font-light max-w-md mx-auto">
+              <Sparkles size={12} className="inline mr-1 text-champagne" />
+              Your booking is confirmed. You will receive a confirmation email with rental instructions shortly.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/orders" className="btn btn-primary h-[52px] px-8 text-xs font-mono uppercase tracking-widest inline-flex items-center justify-center">
+                View My Rentals
+              </Link>
+              <Link href="/discover" className="btn btn-outline h-[52px] px-8 text-xs font-mono uppercase tracking-widest inline-flex items-center justify-center">
+                <ArrowRight size={14} className="mr-1" /> Continue Browsing
+              </Link>
             </div>
-
-          </Card>
-        </motion.div>
-
-        {/* Info alerts */}
-        <motion.div 
-          variants={itemVariants}
-          className="p-4 border border-border bg-[#FAF9F6] rounded-lg text-[10px] text-charcoal-light leading-relaxed border-border/40 text-left font-mono flex items-start gap-2.5"
-        >
-          <Mail size={14} className="text-champagne mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-bold text-charcoal mb-0.5">Receipt Emailed</p>
-            <p>An automated invoice, rental checklist, and courier tracker link have been dispatched to your email address.</p>
-          </div>
-        </motion.div>
-
-        {/* Action button redirecting */}
-        <motion.div variants={itemVariants} className="pt-4 flex flex-col sm:flex-row gap-4">
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={springTransition} className="flex-grow flex">
-            <Link href="/dashboard" className="btn btn-primary flex-grow text-xs font-mono uppercase tracking-widest flex items-center justify-center gap-2">
-              Renter Studio <ArrowRight size={14} />
-            </Link>
-          </motion.div>
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={springTransition} className="flex-grow flex">
-            <Link href="/discover" className="btn btn-outline flex-grow text-xs font-mono uppercase tracking-widest">
-              Rent More Couture
-            </Link>
           </motion.div>
         </motion.div>
-
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -148,8 +148,9 @@ function ConfirmationContent() {
 export default function ConfirmationPage() {
   return (
     <Suspense fallback={
-      <div className="py-24 text-center">
-        <span className="font-mono text-xs uppercase animate-pulse">Loading Confirmation...</span>
+      <div className="bg-ivory min-h-screen pt-36 text-center font-mono text-xs text-charcoal-light">
+        <div className="animate-spin inline-block w-6 h-6 border-2 border-champagne rounded-full border-t-transparent mb-2" />
+        <p>Loading Confirmation...</p>
       </div>
     }>
       <ConfirmationContent />

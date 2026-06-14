@@ -8,6 +8,8 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useCartStore } from '@/store/useCartStore';
 import { useUIStore } from '@/store/useUIStore';
 
+const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
 export default function RenterNavbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const cartItems = useCartStore((s) => s.cartItems);
@@ -17,52 +19,64 @@ export default function RenterNavbar() {
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-[72px] bg-warm-white/80 backdrop-blur-md border-b border-border z-[100] transition-all duration-300 select-none">
+    <header className="fixed top-0 left-0 right-0 h-[72px] bg-warm-white/80 backdrop-blur-md border-b border-border z-[100] select-none">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         
         {/* Editorial Logo */}
-        <Link href="/" className="flex items-center gap-1 group">
-          <span className="font-display text-2xl font-bold tracking-widest text-charcoal group-hover:text-champagne transition-colors">
-            KLOSET
-          </span>
-          <span className="text-[9px] font-mono tracking-widest text-champagne-light uppercase font-extrabold mt-2.5">
-            Luxe
-          </span>
-        </Link>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={springTransition}>
+          <Link href="/" className="flex items-center gap-1 group">
+            <span className="font-display text-2xl font-bold tracking-widest text-charcoal group-hover:text-champagne transition-colors">
+              KLOSET
+            </span>
+            <span className="text-[9px] font-mono tracking-widest text-champagne-light uppercase font-extrabold mt-2.5">
+              Luxe
+            </span>
+          </Link>
+        </motion.div>
 
         {/* Navigation items */}
         <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest font-bold">
-          <Link href="/discover" className="text-charcoal hover:text-champagne transition-colors py-2">
-            Catalog
-          </Link>
-          <Link href="/discover?category=lehenga" className="text-charcoal hover:text-champagne transition-colors py-2">
-            Lehengas
-          </Link>
-          <Link href="/discover?category=saree" className="text-charcoal hover:text-champagne transition-colors py-2">
-            Sarees
-          </Link>
-          <Link href="/discover?category=sherwani" className="text-charcoal hover:text-champagne transition-colors py-2">
-            Sherwanis
-          </Link>
+          {[
+            { label: 'Catalog', href: '/discover' },
+            { label: 'Lehengas', href: '/discover?category=lehenga' },
+            { label: 'Sarees', href: '/discover?category=saree' },
+            { label: 'Sherwanis', href: '/discover?category=sherwani' },
+          ].map((navLink) => (
+            <motion.div
+              key={navLink.label}
+              whileHover={{ scale: 1.05, y: -1 }}
+              transition={springTransition}
+            >
+              <Link href={navLink.href} className="text-charcoal hover:text-champagne transition-colors py-2 block">
+                {navLink.label}
+              </Link>
+            </motion.div>
+          ))}
         </nav>
 
         {/* Operations / Actions */}
         <div className="flex items-center gap-4">
           
           {/* AI Stylist trigger */}
-          <button
+          <motion.button
             onClick={() => setAIStylistOpen(true)}
-            className="flex items-center gap-2 h-10 px-4 rounded bg-gradient-to-r from-champagne/10 to-rose-gold/10 hover:from-champagne/20 hover:to-rose-gold/20 text-champagne border border-champagne/20 transition-all text-[11px] font-mono uppercase tracking-widest font-bold cursor-pointer"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            transition={springTransition}
+            className="flex items-center gap-2 h-[52px] px-4 rounded bg-gradient-to-r from-champagne/10 to-rose-gold/10 hover:from-champagne/20 hover:to-rose-gold/20 text-champagne border border-champagne/20 text-[11px] font-mono uppercase tracking-widest font-bold cursor-pointer"
             title="Open AI Stylist"
           >
             <Sparkles size={14} className="text-champagne animate-pulse" />
             <span className="hidden sm:inline">AI Stylist</span>
-          </button>
+          </motion.button>
 
           {/* Cart Icon */}
-          <button
+          <motion.button
             onClick={() => setCartOpen(true)}
-            className="w-10 h-10 border border-border hover:bg-ivory-dark flex items-center justify-center relative cursor-pointer transition-colors rounded text-charcoal"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={springTransition}
+            className="w-[52px] h-[52px] border border-border hover:bg-ivory-dark flex items-center justify-center relative cursor-pointer rounded text-charcoal"
             aria-label="Shopping Cart"
           >
             <ShoppingBag size={16} />
@@ -71,56 +85,67 @@ export default function RenterNavbar() {
                 {cartCount}
               </span>
             )}
-          </button>
+          </motion.button>
 
           {/* Authenticated routes / Auth state switcher */}
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
               
-              <Link
-                href="/dashboard"
-                className="w-10 h-10 border border-border hover:bg-ivory-dark flex items-center justify-center cursor-pointer transition-colors rounded text-charcoal"
-                title="Renter Dashboard"
-              >
-                <User size={16} />
-              </Link>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
+                <Link
+                  href="/profile"
+                  className="w-[52px] h-[52px] border border-border hover:bg-ivory-dark flex items-center justify-center cursor-pointer transition-colors rounded text-charcoal"
+                  title="Renter Dashboard"
+                >
+                  <User size={16} />
+                </Link>
+              </motion.div>
 
               {user?.role === 'seller' && (
-                <Link
-                  href="/seller"
-                  className="w-10 h-10 border border-border hover:bg-ivory-dark flex items-center justify-center cursor-pointer transition-colors rounded text-charcoal"
-                  title="Seller Studio"
-                >
-                  <LayoutDashboard size={16} />
-                </Link>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
+                  <Link
+                    href="/seller"
+                    className="w-[52px] h-[52px] border border-border hover:bg-ivory-dark flex items-center justify-center cursor-pointer transition-colors rounded text-charcoal"
+                    title="Seller Studio"
+                  >
+                    <LayoutDashboard size={16} />
+                  </Link>
+                </motion.div>
               )}
 
               {user?.role === 'admin' && (
-                <Link
-                  href="/admin"
-                  className="w-10 h-10 border border-border hover:bg-ivory-dark flex items-center justify-center cursor-pointer transition-colors rounded text-charcoal"
-                  title="Admin Dashboard"
-                >
-                  <LayoutDashboard size={16} />
-                </Link>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
+                  <Link
+                    href="/admin"
+                    className="w-[52px] h-[52px] border border-border hover:bg-ivory-dark flex items-center justify-center cursor-pointer transition-colors rounded text-charcoal"
+                    title="Admin Dashboard"
+                  >
+                    <LayoutDashboard size={16} />
+                  </Link>
+                </motion.div>
               )}
 
-              <button
+              <motion.button
                 onClick={logout}
-                className="w-10 h-10 border border-border hover:bg-error/10 hover:border-error/30 flex items-center justify-center cursor-pointer transition-colors rounded text-charcoal-light hover:text-error"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={springTransition}
+                className="w-[52px] h-[52px] border border-border hover:bg-error/10 hover:border-error/30 flex items-center justify-center cursor-pointer transition-colors rounded text-charcoal-light hover:text-error"
                 title="Logout"
               >
                 <LogOut size={16} />
-              </button>
+              </motion.button>
 
             </div>
           ) : (
-            <Link
-              href="/auth/login"
-              className="btn btn-primary !h-10 !px-5 text-[10px] font-mono tracking-widest uppercase font-bold"
-            >
-              Sign In
-            </Link>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={springTransition}>
+              <Link
+                href="/auth/login"
+                className="btn btn-primary !h-[52px] !px-5 text-[10px] font-mono tracking-widest uppercase font-bold"
+              >
+                Sign In
+              </Link>
+            </motion.div>
           )}
 
         </div>

@@ -46,8 +46,15 @@ export default function SellerEarningsPage() {
     }, 1500);
   };
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left font-sans select-none text-charcoal">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left font-sans select-none text-charcoal"
+    >
       
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -62,7 +69,12 @@ export default function SellerEarningsPage() {
       </div>
 
       {/* Wallet overview */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={springTransition}
+        className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch"
+      >
         
         {/* Wallet Balance Card */}
         <Card hoverEffect={false} padding="lg" className="md:col-span-7 bg-[#FAF9F6] border-border relative overflow-hidden flex flex-col justify-between">
@@ -109,53 +121,58 @@ export default function SellerEarningsPage() {
               </div>
             </div>
           </div>
-          <button className="text-[10px] font-mono uppercase tracking-wider text-champagne hover:text-charcoal hover:underline mt-4 text-left font-bold cursor-pointer">
+          <button className="text-[10px] font-mono uppercase tracking-wider text-champagne hover:text-charcoal hover:underline mt-4 text-left font-bold cursor-pointer font-sans border-0 bg-transparent">
             Edit Bank Details
           </button>
         </Card>
 
-      </div>
+      </motion.div>
 
       {/* Ledger list */}
-      <Card hoverEffect={false} padding="md" className="bg-white border-border">
-        <h3 className="font-display text-base font-semibold border-b border-border pb-4 mb-4">Earnings History</h3>
-        {loading ? (
-          <div className="space-y-2 animate-pulse">
-            <div className="shimmer h-12 bg-ivory-dark rounded" />
-            <div className="shimmer h-12 bg-ivory-dark rounded" />
-          </div>
-        ) : earningsList.length === 0 ? (
-          <p className="text-xs text-charcoal-light py-6 text-center font-light">No completed payouts registered yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-border text-[9px] font-mono uppercase text-charcoal-light tracking-wider">
-                  <th className="pb-3 font-semibold">Ref</th>
-                  <th className="pb-3 font-semibold">Timeline Date</th>
-                  <th className="pb-3 font-semibold">Design Listing</th>
-                  <th className="pb-3 font-semibold">Gross Earned</th>
-                  <th className="pb-3 font-semibold text-right">Escrow release</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {earningsList.map((e) => (
-                  <tr key={e.id}>
-                    <td className="py-4 font-mono font-bold text-charcoal">{e.booking_ref}</td>
-                    <td className="py-4 text-charcoal-light">{new Date(e.created_at).toLocaleDateString()}</td>
-                    <td className="py-4 font-medium text-charcoal">{e.outfit?.title || 'Design item'}</td>
-                    <td className="py-4 font-mono text-charcoal font-bold">₹{e.rental_amount.toLocaleString()}</td>
-                    <td className="py-4 text-right">
-                      <Badge variant="success">released</Badge>
-                    </td>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...springTransition, delay: 0.1 }}
+      >
+        <Card hoverEffect={false} padding="md" className="bg-white border-border w-full">
+          <h3 className="font-display text-base font-semibold border-b border-border pb-4 mb-4">Earnings History</h3>
+          {loading ? (
+            <div className="space-y-2 animate-pulse">
+              <div className="shimmer h-12 bg-ivory-dark rounded" />
+              <div className="shimmer h-12 bg-ivory-dark rounded" />
+            </div>
+          ) : earningsList.length === 0 ? (
+            <p className="text-xs text-charcoal-light py-6 text-center font-light">No completed payouts registered yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-border text-[9px] font-mono uppercase text-charcoal-light tracking-wider">
+                    <th className="pb-3 font-semibold">Ref</th>
+                    <th className="pb-3 font-semibold">Timeline Date</th>
+                    <th className="pb-3 font-semibold">Design Listing</th>
+                    <th className="pb-3 font-semibold">Gross Earned</th>
+                    <th className="pb-3 font-semibold text-right">Escrow release</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-
-    </div>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {earningsList.map((e) => (
+                    <tr key={e.id}>
+                      <td className="py-4 font-mono font-bold text-charcoal">{e.booking_ref}</td>
+                      <td className="py-4 text-charcoal-light">{new Date(e.created_at).toLocaleDateString()}</td>
+                      <td className="py-4 font-medium text-charcoal">{e.outfit?.title || 'Design item'}</td>
+                      <td className="py-4 font-mono text-charcoal font-bold">₹{e.rental_amount.toLocaleString()}</td>
+                      <td className="py-4 text-right">
+                        <Badge variant="success">released</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

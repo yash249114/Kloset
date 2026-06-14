@@ -60,6 +60,7 @@ export default function Modal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.6 }}
             exit={{ opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={onClose}
             className="absolute inset-0 bg-charcoal/70 backdrop-blur-[4px] cursor-pointer"
           />
@@ -85,7 +86,7 @@ export default function Modal({
               )}
               <button
                 onClick={onClose}
-                className="w-10 h-10 border border-border hover:bg-ivory-dark text-charcoal flex items-center justify-center cursor-pointer transition-colors rounded"
+                className="w-[52px] h-[52px] border border-border hover:bg-ivory-dark text-charcoal flex items-center justify-center cursor-pointer transition-colors rounded"
                 aria-label="Close modal"
               >
                 <X size={16} />

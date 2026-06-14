@@ -54,6 +54,8 @@ const COLORS = [
   { name: 'Ruby Wine', hex: '#722F37' },
 ];
 
+const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
 const OCCASIONS = [
   'Wedding Reception',
   'Sangeet / Mehendi',
@@ -311,7 +313,7 @@ export default function NewOutfitPage() {
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: '100%' }}
-                        transition={{ duration: 0.3 }}
+                        transition={springTransition}
                         className="h-full bg-champagne"
                       />
                     )}
@@ -340,7 +342,7 @@ export default function NewOutfitPage() {
               initial={{ opacity: 0, x: 15 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -15 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              transition={springTransition}
             >
               {/* STEP 1: GARMENT PROFILE */}
               {step === 1 && (
@@ -493,7 +495,7 @@ export default function NewOutfitPage() {
                               key={occasion}
                               type="button"
                               onClick={() => toggleOccasionSelection(occasion)}
-                              className={`h-[42px] px-5 text-xs font-mono font-semibold uppercase rounded-full border transition-all duration-300 cursor-pointer ${
+                              className={`h-[52px] px-5 text-xs font-mono font-semibold uppercase rounded-full border transition-all duration-300 cursor-pointer ${
                                 isSelected 
                                   ? 'bg-champagne border-champagne text-white' 
                                   : 'bg-white border-border hover:border-champagne text-charcoal-light'
@@ -624,6 +626,7 @@ export default function NewOutfitPage() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
+                          transition={springTransition}
                           className="pt-4 border-t border-border/60"
                         >
                           <Input

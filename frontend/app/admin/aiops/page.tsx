@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Activity, RefreshCcw, Cpu, CheckCircle } from 'lucide-react';
 import { adminAPI } from '@/lib/api';
 import Card from '@/components/ui/Card';
@@ -74,8 +75,15 @@ export default function AdminAIOpsPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans"
+    >
       
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -108,21 +116,33 @@ export default function AdminAIOpsPage() {
           { label: 'Calls (Last Hour)', val: data?.calls_last_hour?.toString() || '124', icon: Activity, desc: 'User queries compiled' },
           { label: 'Response Latency', val: `${data?.latency_avg_ms || 450}ms`, icon: RefreshCcw, desc: 'Average round-trip response' },
           { label: 'System Health', val: data?.status || 'Operational', icon: CheckCircle, desc: `Uptime: ${data?.uptime || '99.98%'}` },
-        ].map((st) => (
-          <Card key={st.label} hoverEffect={false} padding="sm" theme="admin" className="flex flex-col justify-between h-28">
-            <div className="flex items-center justify-between text-[#8C8C8C]">
-              <span className="text-[9px] font-mono tracking-wider uppercase">{st.label}</span>
-              <st.icon size={13} className="text-[#C9A96E]" />
-            </div>
-            <div>
-              <span className="text-xl font-bold font-mono text-[#E8E8E8]">{st.val}</span>
-              <span className="text-[8px] text-[#8C8C8C] block mt-0.5">{st.desc}</span>
-            </div>
-          </Card>
+        ].map((st, index) => (
+          <motion.div
+            key={st.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springTransition, delay: index * 0.05 }}
+          >
+            <Card hoverEffect={false} padding="sm" theme="admin" className="flex flex-col justify-between h-28 w-full">
+              <div className="flex items-center justify-between text-[#8C8C8C]">
+                <span className="text-[9px] font-mono tracking-wider uppercase">{st.label}</span>
+                <st.icon size={13} className="text-[#C9A96E]" />
+              </div>
+              <div>
+                <span className="text-xl font-bold font-mono text-[#E8E8E8]">{st.val}</span>
+                <span className="text-[8px] text-[#8C8C8C] block mt-0.5">{st.desc}</span>
+              </div>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...springTransition, delay: 0.2 }}
+        className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+      >
         
         {/* Latency Area Chart */}
         <Card hoverEffect={false} padding="md" theme="admin" className="lg:col-span-7">
@@ -159,8 +179,7 @@ export default function AdminAIOpsPage() {
           </div>
         </Card>
 
-      </div>
-
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

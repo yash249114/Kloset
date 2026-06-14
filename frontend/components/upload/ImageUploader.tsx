@@ -123,7 +123,7 @@ export default function ImageUploader({
             accept="image/*"
             className="hidden"
           />
-          <Upload size={22} className="text-champagne mb-2 animate-bounce" />
+          <Upload size={22} className="text-champagne mb-2 animate-pulse" />
           <p className="text-xs font-mono text-charcoal uppercase tracking-wider font-bold">
             Drag & Drop or Click to Upload
           </p>

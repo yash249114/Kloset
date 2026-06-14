@@ -114,17 +114,19 @@ export default function WishlistPage() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   >
                     <Card hoverEffect className="bg-white border-border h-full flex flex-col justify-between overflow-hidden relative group">
                       
                       {/* Image container */}
                       <div className="aspect-[3/4] relative w-full overflow-hidden bg-ivory-dark border-b border-border">
                         {primaryImage ? (
-                          <img 
+                          <motion.img 
                             src={primaryImage} 
                             alt={outfit.title} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="w-full h-full object-cover"
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs font-mono text-charcoal-light/40">No Image</div>
@@ -138,20 +140,24 @@ export default function WishlistPage() {
 
                         {/* Overlay Controls */}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                          <Link 
-                            href={`/outfit/${outfit.id}`}
-                            className="p-3 bg-white text-charcoal hover:bg-champagne hover:text-white rounded-full transition-colors"
-                            title="View Garment Detail"
-                          >
-                            <Eye size={16} />
-                          </Link>
-                          <button
-                            onClick={() => handleRemove(outfit.id, outfit.title)}
-                            className="p-3 bg-white text-error hover:bg-error hover:text-white rounded-full transition-colors cursor-pointer"
-                            title="Remove from wishlist"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
+                            <Link 
+                              href={`/outfit/${outfit.id}`}
+                              className="p-3 bg-white text-charcoal hover:bg-champagne hover:text-white rounded-full transition-colors flex items-center justify-center"
+                              title="View Garment Detail"
+                            >
+                              <Eye size={16} />
+                            </Link>
+                          </motion.div>
+                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
+                            <button
+                              onClick={() => handleRemove(outfit.id, outfit.title)}
+                              className="p-3 bg-white text-error hover:bg-error hover:text-white rounded-full transition-colors cursor-pointer flex items-center justify-center"
+                              title="Remove from wishlist"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </motion.div>
                         </div>
                       </div>
 

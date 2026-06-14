@@ -59,8 +59,15 @@ export default function AdminOverviewPage() {
     init();
   }, []);
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans"
+    >
       
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -74,7 +81,7 @@ export default function AdminOverviewPage() {
         </div>
         <button 
           onClick={() => loadStats(true)}
-          className="h-10 px-4 border border-[#2A2A2A] hover:bg-[#1A1A1A] text-[#C9A96E] rounded flex items-center gap-1.5 transition-colors cursor-pointer text-xs font-mono uppercase font-bold"
+          className="h-[52px] px-4 border border-[#2A2A2A] hover:bg-[#1A1A1A] text-[#C9A96E] rounded flex items-center gap-1.5 transition-colors cursor-pointer text-xs font-mono uppercase font-bold"
         >
           <RefreshCcw size={12} /> Sync Analytics
         </button>
@@ -88,28 +95,39 @@ export default function AdminOverviewPage() {
           { label: 'New Users', val: stats?.total_users?.toString() || '320', desc: 'Registered renter/seller profiles', icon: Users },
           { label: 'Open Disputes', val: stats?.open_disputes?.toString() || '3', desc: 'Awaiting mediator response', icon: ShieldAlert },
           { label: 'MTD Revenue', val: `₹${(stats ? stats.total_revenue : 245000).toLocaleString('en-IN')}`, desc: 'Gross commission released', icon: Activity },
-        ].map((st) => (
-          <Card 
-            key={st.label} 
-            hoverEffect={true} 
-            padding="sm" 
-            theme="admin"
-            className="flex flex-col justify-between h-28"
+        ].map((st, index) => (
+          <motion.div
+            key={st.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springTransition, delay: index * 0.05 }}
           >
-            <div className="flex items-center justify-between text-[#8C8C8C]">
-              <span className="text-[9px] font-mono tracking-wider uppercase">{st.label}</span>
-              <st.icon size={13} className="text-[#C9A96E]" />
-            </div>
-            <div>
-              <span className="text-xl font-bold font-mono text-[#E8E8E8]">{st.val}</span>
-              <span className="text-[8px] text-[#8C8C8C] block mt-0.5">{st.desc}</span>
-            </div>
-          </Card>
+            <Card 
+              hoverEffect={true} 
+              padding="sm" 
+              theme="admin"
+              className="flex flex-col justify-between h-28 w-full"
+            >
+              <div className="flex items-center justify-between text-[#8C8C8C]">
+                <span className="text-[9px] font-mono tracking-wider uppercase">{st.label}</span>
+                <st.icon size={13} className="text-[#C9A96E]" />
+              </div>
+              <div>
+                <span className="text-xl font-bold font-mono text-[#E8E8E8]">{st.val}</span>
+                <span className="text-[8px] text-[#8C8C8C] block mt-0.5">{st.desc}</span>
+              </div>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...springTransition, delay: 0.25 }}
+        className="grid grid-cols-1 gap-6"
+      >
         <Card hoverEffect={false} padding="md" theme="admin">
           <h3 className="font-display text-base font-semibold mb-6">Escrow GMV & Platform Commissions (MTD)</h3>
           <div className="h-80 w-full text-xs">
@@ -135,8 +153,7 @@ export default function AdminOverviewPage() {
             </ResponsiveContainer>
           </div>
         </Card>
-      </div>
-
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

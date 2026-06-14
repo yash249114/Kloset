@@ -53,12 +53,13 @@ export default function Card({
   const hoverStyle = hoverEffect 
     ? theme === 'admin'
       ? "hover:border-champagne/40 hover:shadow-lg"
-      : "hover:border-champagne/40 hover:shadow-md hover:-translate-y-[2px]"
+      : "hover:border-champagne/40 hover:shadow-md"
     : "";
 
   return (
     <motion.div
       whileHover={hoverEffect ? { y: -2 } : undefined}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className={`${baseStyle} ${paddingStyle} ${themeStyle} ${hoverStyle} ${className}`}
       {...props}
     >

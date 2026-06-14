@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Search, Star, ShieldCheck } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
@@ -20,8 +21,15 @@ export default function AdminSellersPage() {
     s.email.toLowerCase().includes(query.toLowerCase())
   );
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans"
+    >
       
       {/* Header */}
       <div>
@@ -98,6 +106,6 @@ export default function AdminSellersPage() {
         </div>
       </Card>
 
-    </div>
+    </motion.div>
   );
 }

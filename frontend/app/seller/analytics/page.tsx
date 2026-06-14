@@ -48,8 +48,15 @@ export default function SellerAnalyticsPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left font-sans select-none text-charcoal">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left font-sans select-none text-charcoal"
+    >
       
       {/* Title */}
       <div className="flex items-center justify-between">
@@ -70,22 +77,34 @@ export default function SellerAnalyticsPage() {
           { label: 'Booking Conversion', val: conversionRate, icon: TrendingUp, change: '+0.8% average' },
           { label: 'Average Rental Fee', val: '₹2,450', icon: Calendar, change: 'Across all active categories' },
           { label: 'Repeat Renters', val: '32%', icon: Users, change: 'Loyal customer rate' },
-        ].map((st) => (
-          <Card key={st.label} hoverEffect={true} padding="sm" className="bg-white border-border flex flex-col justify-between h-28">
-            <div className="flex items-center justify-between text-charcoal-light">
-              <span className="text-[10px] font-mono tracking-wider uppercase">{st.label}</span>
-              <st.icon size={14} className="text-champagne" />
-            </div>
-            <div>
-              <span className="text-xl font-bold text-charcoal">{st.val}</span>
-              <span className="text-[8px] text-success block mt-0.5">{st.change}</span>
-            </div>
-          </Card>
+        ].map((st, index) => (
+          <motion.div
+            key={st.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springTransition, delay: index * 0.05 }}
+          >
+            <Card hoverEffect={true} padding="sm" className="bg-white border-border flex flex-col justify-between h-28 w-full">
+              <div className="flex items-center justify-between text-charcoal-light">
+                <span className="text-[10px] font-mono tracking-wider uppercase">{st.label}</span>
+                <st.icon size={14} className="text-champagne" />
+              </div>
+              <div>
+                <span className="text-xl font-bold text-charcoal">{st.val}</span>
+                <span className="text-[8px] text-success block mt-0.5">{st.change}</span>
+              </div>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
       {/* Visual Charts Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...springTransition, delay: 0.2 }}
+        className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+      >
         
         {/* Main Area Chart */}
         <Card hoverEffect={false} padding="md" className="lg:col-span-8 bg-white border-border">
@@ -129,8 +148,7 @@ export default function SellerAnalyticsPage() {
           </div>
         </Card>
 
-      </div>
-
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -49,8 +49,15 @@ export default function SellerOrdersPage() {
     }
   };
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left font-sans select-none text-charcoal">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left font-sans select-none text-charcoal"
+    >
       
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -87,17 +94,22 @@ export default function SellerOrdersPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {bookings.map((b) => {
+          {bookings.map((b, index) => {
             const outfitImg = b.outfit?.images?.[0]?.url || '/placeholder-outfit.jpg';
             const showUpdateAction = ['confirmed', 'picked_up', 'returned', 'cleaning'].includes(b.status);
 
             return (
-              <Card
+              <motion.div
                 key={b.id}
-                hoverEffect={false}
-                padding="md"
-                className="bg-white border-border flex flex-col md:flex-row gap-6 items-center justify-between"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...springTransition, delay: index * 0.05 }}
               >
+                <Card
+                  hoverEffect={false}
+                  padding="md"
+                  className="bg-white border-border flex flex-col md:flex-row gap-6 items-center justify-between"
+                >
                 
                 {/* Product/timeline description */}
                 <div className="flex flex-col sm:flex-row gap-4 items-center flex-1 text-center sm:text-left">
@@ -144,7 +156,7 @@ export default function SellerOrdersPage() {
                           variant="gold"
                           isLoading={updatingId === b.id}
                           onClick={() => handleStatusChange(b.id, 'picked_up')}
-                          className="!h-[44px] !px-4 text-[10px] font-mono tracking-wider uppercase flex items-center gap-1 cursor-pointer"
+                          className="!h-[52px] !px-4 text-[10px] font-mono tracking-wider uppercase flex items-center gap-1 cursor-pointer"
                         >
                           <Truck size={12} /> Dispatched
                         </Button>
@@ -155,7 +167,7 @@ export default function SellerOrdersPage() {
                           variant="gold"
                           isLoading={updatingId === b.id}
                           onClick={() => handleStatusChange(b.id, 'returned')}
-                          className="!h-[44px] !px-4 text-[10px] font-mono tracking-wider uppercase flex items-center gap-1 cursor-pointer"
+                          className="!h-[52px] !px-4 text-[10px] font-mono tracking-wider uppercase flex items-center gap-1 cursor-pointer"
                         >
                           <Check size={12} /> Mark Returned
                         </Button>
@@ -166,7 +178,7 @@ export default function SellerOrdersPage() {
                           variant="gold"
                           isLoading={updatingId === b.id}
                           onClick={() => handleStatusChange(b.id, 'cleaning')}
-                          className="!h-[44px] !px-4 text-[10px] font-mono tracking-wider uppercase flex items-center gap-1 cursor-pointer"
+                          className="!h-[52px] !px-4 text-[10px] font-mono tracking-wider uppercase flex items-center gap-1 cursor-pointer"
                         >
                           <RefreshCcw size={12} /> Sent To Dry Clean
                         </Button>
@@ -177,7 +189,7 @@ export default function SellerOrdersPage() {
                           variant="gold"
                           isLoading={updatingId === b.id}
                           onClick={() => handleStatusChange(b.id, 'completed')}
-                          className="!h-[44px] !px-4 text-[10px] font-mono tracking-wider uppercase flex items-center gap-1 cursor-pointer"
+                          className="!h-[52px] !px-4 text-[10px] font-mono tracking-wider uppercase flex items-center gap-1 cursor-pointer"
                         >
                           <Check size={12} /> Complete Order
                         </Button>
@@ -187,12 +199,13 @@ export default function SellerOrdersPage() {
                   </div>
                 )}
 
-              </Card>
+                </Card>
+              </motion.div>
             );
           })}
         </div>
       )}
 
-    </div>
+      </motion.div>
   );
 }

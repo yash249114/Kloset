@@ -46,6 +46,8 @@ export default function SellerDashboardPage() {
     .filter((b) => b.status === 'completed' || b.status === 'returned')
     .reduce((acc, b) => acc + b.rental_amount, 0);
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse select-none text-left">
@@ -61,7 +63,12 @@ export default function SellerDashboardPage() {
   }
 
   return (
-    <div className="space-y-8 text-left font-sans select-none text-charcoal">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left font-sans select-none text-charcoal"
+    >
       
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -88,22 +95,34 @@ export default function SellerDashboardPage() {
           { label: 'Active Rentals', val: bookings.filter((b) => ['confirmed', 'picked_up', 'in_use'].includes(b.status)).length.toString(), desc: 'Outfits currently rented', icon: Calendar },
           { label: 'Studio Earnings', val: `₹${totalEarnings.toLocaleString('en-IN')}`, desc: 'Escrow released funds', icon: DollarSign },
           { label: 'Trust Score', val: `${user?.trust_score || 98}%`, desc: 'Based on quality audits', icon: Star },
-        ].map((st) => (
-          <Card key={st.label} hoverEffect={true} padding="sm" className="flex flex-col justify-between h-28 bg-white border-border">
-            <div className="flex items-center justify-between text-charcoal-light">
-              <span className="text-[10px] font-mono tracking-wider uppercase">{st.label}</span>
-              <st.icon size={14} className="text-champagne" />
-            </div>
-            <div>
-              <span className="text-2xl font-bold text-charcoal">{st.val}</span>
-              <span className="text-[9px] text-charcoal-light block mt-0.5">{st.desc}</span>
-            </div>
-          </Card>
+        ].map((st, index) => (
+          <motion.div
+            key={st.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springTransition, delay: index * 0.05 }}
+          >
+            <Card hoverEffect={true} padding="sm" className="flex flex-col justify-between h-28 bg-white border-border w-full">
+              <div className="flex items-center justify-between text-charcoal-light">
+                <span className="text-[10px] font-mono tracking-wider uppercase">{st.label}</span>
+                <st.icon size={14} className="text-champagne" />
+              </div>
+              <div>
+                <span className="text-2xl font-bold text-charcoal">{st.val}</span>
+                <span className="text-[9px] text-charcoal-light block mt-0.5">{st.desc}</span>
+              </div>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
       {/* Bookings & activity layout */}
-      <div className="grid grid-cols-1 gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...springTransition, delay: 0.2 }}
+        className="grid grid-cols-1 gap-6"
+      >
         <Card hoverEffect={false} padding="md" className="bg-white border-border">
           <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
             <h3 className="font-display text-base font-semibold">Recent Rental Activity</h3>
@@ -157,8 +176,7 @@ export default function SellerDashboardPage() {
             </div>
           )}
         </Card>
-      </div>
-
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

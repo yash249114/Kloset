@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Calendar, 
   MapPin, 
@@ -15,10 +15,8 @@ import {
   CheckCircle2, 
   ShieldAlert, 
   Undo2, 
-  PlusCircle, 
   Inbox,
   XCircle,
-  MessageSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { bookingsAPI, reviewsAPI, disputesAPI } from '@/lib/api';
@@ -57,6 +55,8 @@ const getStatusBadge = (status: BookingStatus) => {
       return <Badge variant="charcoal">{status}</Badge>;
   }
 };
+
+const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
 export default function RenterOrdersPage() {
   const router = useRouter();
@@ -210,17 +210,20 @@ export default function RenterOrdersPage() {
             { id: 'active', label: 'In Progress' },
             { id: 'completed', label: 'Completed' },
           ].map((tab) => (
-            <button
+            <motion.button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`h-12 px-6 text-xs font-mono font-bold uppercase tracking-wider border-b-2 cursor-pointer transition-colors ${
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              transition={springTransition}
+              className={`h-[52px] px-6 text-xs font-mono font-bold uppercase tracking-wider border-b-2 cursor-pointer transition-colors ${
                 activeTab === tab.id 
                   ? 'border-champagne text-champagne' 
                   : 'border-transparent text-charcoal-light hover:text-charcoal'
               }`}
             >
               {tab.label}
-            </button>
+            </motion.button>
           ))}
         </div>
 
@@ -232,9 +235,11 @@ export default function RenterOrdersPage() {
             <p className="text-[10px] font-mono text-charcoal-light/70 mt-1 max-w-sm mx-auto font-light">
               You do not have any bookings listed in this query. Explore our collections of couture!
             </p>
-            <Link href="/discover" className="btn btn-primary h-[52px] px-8 text-xs font-mono uppercase tracking-widest inline-flex items-center justify-center mt-6">
-              Browse Collections
-            </Link>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={springTransition} className="inline-block mt-6">
+              <Link href="/discover" className="btn btn-primary h-[52px] px-8 text-xs font-mono uppercase tracking-widest inline-flex items-center justify-center">
+                Browse Collections
+              </Link>
+            </motion.div>
           </Card>
         ) : (
           <div className="space-y-6">
@@ -244,140 +249,145 @@ export default function RenterOrdersPage() {
               const createdFmt = new Date(booking.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
               return (
-                <Card 
-                  key={booking.id} 
-                  hoverEffect={false} 
-                  padding="md" 
-                  className="bg-white border-border shadow-sm flex flex-col md:flex-row gap-6 relative overflow-hidden"
+                <motion.div
+                  key={booking.id}
+                  whileHover={{ y: -4, boxShadow: '0 8px 25px rgba(0, 0, 0, 0.02)' }}
+                  transition={springTransition}
                 >
-                  {/* Status Indicator Bar */}
-                  <div className="absolute top-0 inset-x-0 h-1 bg-[#D4AF37]/20" />
+                  <Card 
+                    hoverEffect={false} 
+                    padding="md" 
+                    className="bg-white border-border shadow-sm flex flex-col md:flex-row gap-6 relative overflow-hidden text-left"
+                  >
+                    {/* Status Indicator Bar */}
+                    <div className="absolute top-0 inset-x-0 h-1 bg-[#D4AF37]/20" />
 
-                  {/* Garment Image */}
-                  <div className="w-full md:w-32 aspect-[3/4] rounded-lg border border-border overflow-hidden bg-ivory-dark flex-shrink-0 relative">
-                    {booking.outfit?.images?.[0] ? (
-                      <img 
-                        src={booking.outfit.images[0].url} 
-                        alt="Garment Thumbnail" 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[10px] font-mono text-charcoal-light/40">No Image</div>
-                    )}
-                  </div>
-
-                  {/* Summary Block */}
-                  <div className="flex-1 space-y-4">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <span className="text-[9px] font-mono text-champagne font-bold uppercase tracking-wider block">
-                          Registry ID: {booking.booking_ref}
-                        </span>
-                        <h3 className="text-base font-display font-medium text-charcoal mt-0.5">
-                          {booking.outfit?.title || 'Garment Rental'}
-                        </h3>
-                        <p className="text-[10px] font-mono text-charcoal-light font-light mt-1">
-                          Booked on {createdFmt}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        {getStatusBadge(booking.status)}
-                        <span className="text-xs font-mono font-bold text-charcoal block mt-1">
-                          ₹{booking.total_amount.toLocaleString('en-IN')}
-                        </span>
-                      </div>
+                    {/* Garment Image */}
+                    <div className="w-full md:w-32 aspect-[3/4] rounded-lg border border-border overflow-hidden bg-ivory-dark flex-shrink-0 relative">
+                      {booking.outfit?.images?.[0] ? (
+                        <img 
+                          src={booking.outfit.images[0].url} 
+                          alt="Garment Thumbnail" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] font-mono text-charcoal-light/40">No Image</div>
+                      )}
                     </div>
 
-                    {/* Timeline Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 border border-border/60 bg-[#FAF9F6] rounded-lg text-xs">
-                      <div>
-                        <span className="text-[9px] font-mono text-charcoal-light uppercase block font-semibold">Rental Start</span>
-                        <span className="font-semibold text-charcoal mt-0.5 block flex items-center gap-1">
-                          <Calendar size={12} className="text-champagne" /> {startFmt}
-                        </span>
+                    {/* Summary Block */}
+                    <div className="flex-1 space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <span className="text-[9px] font-mono text-champagne font-bold uppercase tracking-wider block">
+                            Registry ID: {booking.booking_ref}
+                          </span>
+                          <h3 className="text-base font-display font-medium text-charcoal mt-0.5">
+                            {booking.outfit?.title || 'Garment Rental'}
+                          </h3>
+                          <p className="text-[10px] font-mono text-charcoal-light font-light mt-1">
+                            Booked on {createdFmt}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          {getStatusBadge(booking.status)}
+                          <span className="text-xs font-mono font-bold text-charcoal block mt-1">
+                            ₹{booking.total_amount.toLocaleString('en-IN')}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-[9px] font-mono text-charcoal-light uppercase block font-semibold">Rental End</span>
-                        <span className="font-semibold text-charcoal mt-0.5 block flex items-center gap-1">
-                          <Calendar size={12} className="text-champagne" /> {endFmt}
-                        </span>
+
+                      {/* Timeline Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 border border-border/60 bg-[#FAF9F6] rounded-lg text-xs">
+                        <div>
+                          <span className="text-[9px] font-mono text-charcoal-light uppercase block font-semibold">Rental Start</span>
+                          <span className="font-semibold text-charcoal mt-0.5 block flex items-center gap-1">
+                            <Calendar size={12} className="text-champagne" /> {startFmt}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-mono text-charcoal-light uppercase block font-semibold">Rental End</span>
+                          <span className="font-semibold text-charcoal mt-0.5 block flex items-center gap-1">
+                            <Calendar size={12} className="text-champagne" /> {endFmt}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-mono text-charcoal-light uppercase block font-semibold">Fit Size</span>
+                          <span className="font-mono font-bold text-charcoal mt-0.5 block uppercase">
+                            {booking.size_selected || 'M'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-mono text-charcoal-light uppercase block font-semibold">Fulfillment</span>
+                          <span className="font-semibold text-charcoal mt-0.5 block capitalize flex items-center gap-1">
+                            <Truck size={12} className="text-champagne" /> {booking.delivery_type}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-[9px] font-mono text-charcoal-light uppercase block font-semibold">Fit Size</span>
-                        <span className="font-mono font-bold text-charcoal mt-0.5 block uppercase">
-                          {booking.size_selected || 'M'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-mono text-charcoal-light uppercase block font-semibold">Fulfillment</span>
-                        <span className="font-semibold text-charcoal mt-0.5 block capitalize flex items-center gap-1">
-                          <Truck size={12} className="text-champagne" /> {booking.delivery_type}
-                        </span>
+
+                      {/* Action buttons inside the item layout */}
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        
+                        {/* 1. Mark booking picked up */}
+                        {booking.status === 'confirmed' && (
+                          <Button
+                            variant="primary"
+                            onClick={() => handleUpdateStatus(booking.id, 'picked_up')}
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
+                          >
+                            <CheckCircle2 size={12} className="mr-1" /> Garment Received
+                          </Button>
+                        )}
+
+                        {/* 2. Transition from picked_up to in_use */}
+                        {booking.status === 'picked_up' && (
+                          <Button
+                            variant="gold"
+                            onClick={() => handleUpdateStatus(booking.id, 'in_use')}
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
+                          >
+                            <Clock size={12} className="mr-1" /> Wear Couture (Activate)
+                          </Button>
+                        )}
+
+                        {/* 3. Initiate return from in_use */}
+                        {booking.status === 'in_use' && (
+                          <Button
+                            variant="primary"
+                            onClick={() => handleUpdateStatus(booking.id, 'return_initiated')}
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
+                          >
+                            <Undo2 size={12} className="mr-1" /> Handover to Courier
+                          </Button>
+                        )}
+
+                        {/* 4. Complete / Review option */}
+                        {(booking.status === 'returned' || booking.status === 'completed') && (
+                          <Button
+                            variant="gold"
+                            onClick={() => setSelectedBookingForReview(booking)}
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
+                          >
+                            <Star size={12} className="mr-1" /> Post Garment Review
+                          </Button>
+                        )}
+
+                        {/* 5. Raising dispute ticket */}
+                        {!['completed', 'cancelled', 'disputed'].includes(booking.status) && (
+                          <Button
+                            variant="outline"
+                            onClick={() => setSelectedBookingForDispute(booking)}
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider border-red-200 text-error hover:bg-red-50 hover:border-red-400 cursor-pointer"
+                          >
+                            <ShieldAlert size={12} className="mr-1" /> Dispute Escrow Funds
+                          </Button>
+                        )}
+
                       </div>
                     </div>
-
-                    {/* Action buttons inside the item layout */}
-                    <div className="flex flex-wrap gap-3 pt-2">
-                      
-                      {/* 1. Mark booking picked up */}
-                      {booking.status === 'confirmed' && (
-                        <Button
-                          variant="primary"
-                          onClick={() => handleUpdateStatus(booking.id, 'picked_up')}
-                          className="h-10 text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
-                        >
-                          <CheckCircle2 size={12} className="mr-1" /> Garment Received
-                        </Button>
-                      )}
-
-                      {/* 2. Transition from picked_up to in_use */}
-                      {booking.status === 'picked_up' && (
-                        <Button
-                          variant="gold"
-                          onClick={() => handleUpdateStatus(booking.id, 'in_use')}
-                          className="h-10 text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
-                        >
-                          <Clock size={12} className="mr-1" /> Wear Couture (Activate)
-                        </Button>
-                      )}
-
-                      {/* 3. Initiate return from in_use */}
-                      {booking.status === 'in_use' && (
-                        <Button
-                          variant="primary"
-                          onClick={() => handleUpdateStatus(booking.id, 'return_initiated')}
-                          className="h-10 text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
-                        >
-                          <Undo2 size={12} className="mr-1" /> Handover to Courier
-                        </Button>
-                      )}
-
-                      {/* 4. Complete / Review option */}
-                      {(booking.status === 'returned' || booking.status === 'completed') && (
-                        <Button
-                          variant="gold"
-                          onClick={() => setSelectedBookingForReview(booking)}
-                          className="h-10 text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
-                        >
-                          <Star size={12} className="mr-1" /> Post Garment Review
-                        </Button>
-                      )}
-
-                      {/* 5. Raising dispute ticket */}
-                      {!['completed', 'cancelled', 'disputed'].includes(booking.status) && (
-                        <Button
-                          variant="outline"
-                          onClick={() => setSelectedBookingForDispute(booking)}
-                          className="h-10 text-[10px] px-4 font-mono font-bold uppercase tracking-wider border-red-200 text-error hover:bg-red-50 hover:border-red-400 cursor-pointer"
-                        >
-                          <ShieldAlert size={12} className="mr-1" /> Dispute Escrow Funds
-                        </Button>
-                      )}
-
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
@@ -405,17 +415,20 @@ export default function RenterOrdersPage() {
                   {[1, 2, 3, 4, 5].map((starVal) => {
                     const isFilled = rating >= starVal;
                     return (
-                      <button
+                      <motion.button
                         key={starVal}
                         type="button"
+                        whileHover={{ scale: 1.15 }}
+                        whileTap={{ scale: 0.85 }}
+                        transition={springTransition}
                         onClick={() => setRating(starVal)}
-                        className="p-1 cursor-pointer transition-transform hover:scale-110"
+                        className="p-1 cursor-pointer"
                       >
                         <Star 
                           size={24} 
                           className={isFilled ? 'fill-champagne text-champagne' : 'text-border'}
                         />
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -439,7 +452,7 @@ export default function RenterOrdersPage() {
                   type="button"
                   variant="ghost"
                   onClick={() => setSelectedBookingForReview(null)}
-                  className="h-10 text-[10px] px-4"
+                  className="h-[52px] text-[10px] px-4"
                 >
                   Cancel
                 </Button>
@@ -447,7 +460,7 @@ export default function RenterOrdersPage() {
                   type="submit"
                   variant="gold"
                   isLoading={submittingReview}
-                  className="h-10 text-[10px] px-6"
+                  className="h-[52px] text-[10px] px-6"
                 >
                   Post Review
                 </Button>
@@ -499,7 +512,7 @@ export default function RenterOrdersPage() {
                   type="button"
                   variant="ghost"
                   onClick={() => setSelectedBookingForDispute(null)}
-                  className="h-10 text-[10px] px-4"
+                  className="h-[52px] text-[10px] px-4"
                 >
                   Cancel
                 </Button>
@@ -507,7 +520,7 @@ export default function RenterOrdersPage() {
                   type="submit"
                   variant="primary"
                   isLoading={submittingDispute}
-                  className="h-10 text-[10px] px-6 bg-error border-error hover:bg-red-700 hover:border-red-700 text-white"
+                  className="h-[52px] text-[10px] px-6 bg-error border-error hover:bg-red-700 hover:border-red-700 text-white"
                 >
                   Lock Escrow Funds
                 </Button>

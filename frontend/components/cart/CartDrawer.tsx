@@ -92,7 +92,7 @@ export default function CartDrawer() {
               </p>
               <button
                 onClick={() => setCartOpen(false)}
-                className="btn btn-gold !h-11 px-6 text-[10px] font-mono tracking-widest uppercase mt-2 cursor-pointer"
+                className="btn btn-gold !h-[52px] px-6 text-[10px] font-mono tracking-widest uppercase mt-2 cursor-pointer"
               >
                 Explore Catalog
               </button>
@@ -233,7 +233,7 @@ export default function CartDrawer() {
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
                   disabled={couponSuccess}
-                  className="w-full h-11 border border-border rounded pl-9 pr-3 text-xs focus:outline-none focus:border-champagne uppercase font-mono tracking-wider"
+                  className="w-full h-[52px] border border-border rounded pl-9 pr-3 text-xs focus:outline-none focus:border-champagne uppercase font-mono tracking-wider"
                 />
               </div>
               {couponSuccess ? (
@@ -241,7 +241,7 @@ export default function CartDrawer() {
                   type="button"
                   variant="outline"
                   onClick={handleRemoveCoupon}
-                  className="!h-11 !px-4 text-xs font-mono tracking-widest uppercase cursor-pointer"
+                  className="!h-[52px] !px-4 text-xs font-mono tracking-widest uppercase cursor-pointer"
                 >
                   Remove
                 </Button>
@@ -249,7 +249,7 @@ export default function CartDrawer() {
                 <Button
                   type="submit"
                   variant="gold"
-                  className="!h-11 !px-4 text-xs font-mono tracking-widest uppercase cursor-pointer"
+                  className="!h-[52px] !px-4 text-xs font-mono tracking-widest uppercase cursor-pointer"
                 >
                   Apply
                 </Button>

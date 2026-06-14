@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -22,8 +23,15 @@ export default function AdminSettingsPage() {
     }, 1200);
   };
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans"
+    >
       
       {/* Header */}
       <div>
@@ -95,6 +103,6 @@ export default function AdminSettingsPage() {
         </form>
       </Card>
 
-    </div>
+    </motion.div>
   );
 }

@@ -57,6 +57,7 @@ export default function Drawer({
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             exit={{ opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={onClose}
             className="absolute inset-0 bg-charcoal/40 backdrop-blur-[4px] cursor-pointer"
           />
@@ -67,7 +68,7 @@ export default function Drawer({
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 260 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="w-screen flex flex-col h-full bg-ivory border-l border-border shadow-2xl relative"
               style={{ maxWidth }}
             >
@@ -82,7 +83,7 @@ export default function Drawer({
                 )}
                 <button
                   onClick={onClose}
-                  className="w-10 h-10 border border-border hover:bg-ivory-dark text-charcoal flex items-center justify-center cursor-pointer transition-colors rounded"
+                  className="w-[52px] h-[52px] border border-border hover:bg-ivory-dark text-charcoal flex items-center justify-center cursor-pointer transition-colors rounded"
                   aria-label="Close drawer"
                 >
                   <X size={16} />

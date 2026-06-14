@@ -27,6 +27,8 @@ import Card from '@/components/ui/Card';
 
 type ProfileTab = 'personal' | 'addresses' | 'business' | 'wallet';
 
+const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
 export default function ProfilePage() {
   const router = useRouter();
   const { user, setUser, isAuthenticated, isLoading: authLoading } = useAuthStore();
@@ -262,10 +264,13 @@ export default function ProfilePage() {
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               return (
-                <button
+                <motion.button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as ProfileTab)}
-                  className={`w-full h-12 px-4 text-xs font-mono font-bold uppercase tracking-wider rounded flex items-center gap-3 transition-colors cursor-pointer ${
+                  whileHover={{ scale: 1.02, x: 2 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={springTransition}
+                  className={`w-full h-[52px] px-4 text-xs font-mono font-bold uppercase tracking-wider rounded flex items-center gap-3 transition-colors cursor-pointer ${
                     isActive 
                       ? 'bg-charcoal text-ivory' 
                       : 'bg-white border border-border/60 hover:bg-ivory-dark text-charcoal-light'
@@ -273,7 +278,7 @@ export default function ProfilePage() {
                 >
                   {tab.icon}
                   {tab.label}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -286,7 +291,7 @@ export default function ProfilePage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
+                transition={springTransition}
               >
                 {/* 1. PERSONAL TAB */}
                 {activeTab === 'personal' && (
@@ -295,7 +300,7 @@ export default function ProfilePage() {
                       <UserIcon size={14} /> Personal Identity Registry
                     </h3>
 
-                    <form onSubmit={handleUpdatePersonal} className="space-y-4">
+                    <form onSubmit={handleUpdatePersonal} className="space-y-4 text-left">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                           label="Full Legal Name"
@@ -376,7 +381,7 @@ export default function ProfilePage() {
                             type="button"
                             variant="outline"
                             onClick={() => setShowAddAddress(true)}
-                            className="h-10 text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
                           >
                             <Plus size={12} className="mr-1" /> Add Address
                           </Button>
@@ -384,87 +389,91 @@ export default function ProfilePage() {
                       </div>
 
                       {/* Add Address Form */}
-                      {showAddAddress && (
-                        <motion.form
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          onSubmit={handleAddAddress}
-                          className="p-5 border border-border/80 bg-[#FAF9F6] rounded-lg mb-6 space-y-4"
-                        >
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Input
-                              label="address label (e.g. Home, Office, Atelier)"
-                              name="label"
-                              value={newAddress.label}
-                              onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
-                              required
-                            />
-                            <Input
-                              label="postal pincode"
-                              name="pincode"
-                              value={newAddress.pincode}
-                              onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
-                              required
-                            />
-                          </div>
-
-                          <Input
-                            label="street address details"
-                            name="full_address"
-                            value={newAddress.full_address}
-                            onChange={(e) => setNewAddress({ ...newAddress, full_address: e.target.value })}
-                            required
-                          />
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Input
-                              label="City"
-                              name="city"
-                              value={newAddress.city}
-                              onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                              required
-                            />
-                            <Input
-                              label="State"
-                              name="state"
-                              value={newAddress.state}
-                              onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-                              required
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2">
-                            <label className="text-[10px] font-mono tracking-widest text-charcoal-light uppercase font-bold flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                className="w-4 h-4 accent-champagne"
-                                checked={newAddress.is_default}
-                                onChange={(e) => setNewAddress({ ...newAddress, is_default: e.target.checked })}
+                      <AnimatePresence>
+                        {showAddAddress && (
+                          <motion.form
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={springTransition}
+                            onSubmit={handleAddAddress}
+                            className="p-5 border border-border/80 bg-[#FAF9F6] rounded-lg mb-6 space-y-4 overflow-hidden"
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <Input
+                                label="address label (e.g. Home, Office, Atelier)"
+                                name="label"
+                                value={newAddress.label}
+                                onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
+                                required
                               />
-                              Designate Default Destination
-                            </label>
-
-                            <div className="flex gap-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => setShowAddAddress(false)}
-                                className="h-10 text-[10px] px-4"
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                type="submit"
-                                variant="primary"
-                                isLoading={updating}
-                                className="h-10 text-[10px] px-6"
-                              >
-                                Save Location
-                              </Button>
+                              <Input
+                                label="postal pincode"
+                                name="pincode"
+                                value={newAddress.pincode}
+                                onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                                required
+                              />
                             </div>
-                          </div>
-                        </motion.form>
-                      )}
+
+                            <Input
+                              label="street address details"
+                              name="full_address"
+                              value={newAddress.full_address}
+                              onChange={(e) => setNewAddress({ ...newAddress, full_address: e.target.value })}
+                              required
+                            />
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <Input
+                                label="City"
+                                name="city"
+                                value={newAddress.city}
+                                onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                                required
+                              />
+                              <Input
+                                label="State"
+                                name="state"
+                                value={newAddress.state}
+                                onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
+                                required
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2">
+                              <label className="text-[10px] font-mono tracking-widest text-charcoal-light uppercase font-bold flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4 accent-champagne"
+                                  checked={newAddress.is_default}
+                                  onChange={(e) => setNewAddress({ ...newAddress, is_default: e.target.checked })}
+                                />
+                                Designate Default Destination
+                              </label>
+
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={() => setShowAddAddress(false)}
+                                  className="h-[52px] text-[10px] px-4"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="submit"
+                                  variant="primary"
+                                  isLoading={updating}
+                                  className="h-[52px] text-[10px] px-6"
+                                >
+                                  Save Location
+                                </Button>
+                              </div>
+                            </div>
+                          </motion.form>
+                        )}
+                      </AnimatePresence>
 
                       {/* Addresses Grid list */}
                       {addresses.length === 0 ? (
@@ -474,9 +483,11 @@ export default function ProfilePage() {
                       ) : (
                         <div className="space-y-4">
                           {addresses.map((addr) => (
-                            <div 
+                            <motion.div 
                               key={addr.id}
-                              className={`p-4 border rounded-lg flex items-start justify-between gap-4 transition-colors ${
+                              whileHover={{ y: -2 }}
+                              transition={springTransition}
+                              className={`p-4 border rounded-lg flex items-start justify-between gap-4 ${
                                 addr.is_default 
                                   ? 'border-champagne bg-champagne/[0.02]' 
                                   : 'border-border bg-white hover:border-champagne/40'
@@ -499,22 +510,28 @@ export default function ProfilePage() {
 
                               <div className="flex gap-1.5 flex-shrink-0">
                                 {!addr.is_default && (
-                                  <button
+                                  <motion.button
                                     onClick={() => handleSetDefaultAddress(addr.id)}
-                                    className="p-2 border border-border bg-white hover:bg-ivory-dark text-charcoal-light rounded transition-colors text-[9px] font-mono uppercase font-bold cursor-pointer"
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    transition={springTransition}
+                                    className="p-2 border border-border bg-white hover:bg-ivory-dark text-charcoal-light rounded text-[9px] font-mono uppercase font-bold cursor-pointer"
                                   >
                                     Set Default
-                                  </button>
+                                  </motion.button>
                                 )}
-                                <button
+                                <motion.button
                                   onClick={() => handleDeleteAddress(addr.id)}
-                                  className="p-2 border border-border bg-white hover:border-red-50 hover:text-error text-charcoal-light rounded transition-colors cursor-pointer"
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  transition={springTransition}
+                                  className="p-2 border border-border bg-white hover:border-red-50 hover:text-error text-charcoal-light rounded cursor-pointer"
                                   title="Delete location"
                                 >
                                   <Trash2 size={13} />
-                                </button>
+                                </motion.button>
                               </div>
-                            </div>
+                            </motion.div>
                           ))}
                         </div>
                       )}
@@ -529,7 +546,7 @@ export default function ProfilePage() {
                       <Building size={14} /> Bespoke Host Settings
                     </h3>
 
-                    <form onSubmit={handleUpdateBusiness} className="space-y-4">
+                    <form onSubmit={handleUpdateBusiness} className="space-y-4 text-left">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input
                           label="Atelier Business Name"
@@ -638,7 +655,7 @@ export default function ProfilePage() {
                           type="button"
                           variant="primary"
                           onClick={() => toast.info('Payout settlement automated at calendar end.')}
-                          className="h-10 text-[10px] px-6 font-mono font-bold uppercase cursor-pointer"
+                          className="h-[52px] text-[10px] px-6 font-mono font-bold uppercase cursor-pointer"
                         >
                           Withdraw Payout
                         </Button>
@@ -646,7 +663,7 @@ export default function ProfilePage() {
                           type="button"
                           variant="outline"
                           onClick={() => toast.info('Credits can be loaded at checkouts.')}
-                          className="h-10 text-[10px] px-6 font-mono font-bold uppercase cursor-pointer"
+                          className="h-[52px] text-[10px] px-6 font-mono font-bold uppercase cursor-pointer"
                         >
                           Add Wallet Credits
                         </Button>

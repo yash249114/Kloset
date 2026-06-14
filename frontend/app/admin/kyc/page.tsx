@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { adminAPI, AdminKYCUser } from '@/lib/api';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
@@ -53,8 +54,15 @@ export default function AdminKYCPage() {
     }
   };
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans"
+    >
       
       {/* Header */}
       <div>
@@ -103,13 +111,13 @@ export default function AdminKYCPage() {
                       <Button
                         variant="gold"
                         onClick={() => handleApprove(u.id)}
-                        className="!h-9 !px-4 text-[10px] font-mono tracking-wider uppercase cursor-pointer"
+                        className="!h-[52px] !px-4 text-[10px] font-mono tracking-wider uppercase cursor-pointer"
                       >
                         Approve
                       </Button>
                       <button
                         onClick={() => handleReject(u.id)}
-                        className="h-9 px-4 border border-[#2A2A2A] hover:bg-error/10 hover:border-error/30 text-error rounded text-[10px] font-mono uppercase tracking-wider font-semibold cursor-pointer transition-colors"
+                        className="h-[52px] px-4 border border-[#2A2A2A] hover:bg-error/10 hover:border-error/30 text-error rounded text-[10px] font-mono uppercase tracking-wider font-semibold cursor-pointer transition-colors"
                       >
                         Reject
                       </button>
@@ -122,6 +130,6 @@ export default function AdminKYCPage() {
         </Card>
       )}
 
-    </div>
+    </motion.div>
   );
 }

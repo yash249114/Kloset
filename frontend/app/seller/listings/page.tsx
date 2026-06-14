@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Plus, Edit2, Trash2, CheckCircle, RefreshCcw, Image as ImageIcon, Send } from 'lucide-react';
 import { outfitsAPI } from '@/lib/api';
 import type { Outfit, OutfitCategory } from '@/types';
@@ -154,8 +154,15 @@ export default function SellerListingsPage() {
     }
   };
 
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
-    <div className="space-y-8 text-left font-sans select-none text-charcoal">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="space-y-8 text-left font-sans select-none text-charcoal"
+    >
       
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -200,55 +207,67 @@ export default function SellerListingsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {outfits.map((item) => {
+          {outfits.map((item, index) => {
             const imgUrl = item.images?.[0]?.url || '/placeholder-outfit.jpg';
             return (
-              <Card
+              <motion.div
                 key={item.id}
-                hoverEffect={true}
-                padding="none"
-                className="bg-white border-border text-left flex flex-col justify-between"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...springTransition, delay: index * 0.05 }}
               >
-                <div className="h-[260px] relative overflow-hidden bg-ivory-dark">
-                  <img src={imgUrl} alt={item.title} className="w-full h-full object-cover" />
-                  <span className="absolute top-3 right-3">
-                    <Badge variant={
-                      item.status === 'active' ? 'sage' :
-                      item.status === 'pending_approval' ? 'gold' : 'charcoal'
-                    }>
-                      {item.status}
-                    </Badge>
-                  </span>
-                </div>
-                <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <span className="text-[9px] font-mono text-champagne uppercase font-bold tracking-widest block">
-                      {item.category}
+                <Card
+                  hoverEffect={true}
+                  padding="none"
+                  className="bg-white border-border text-left flex flex-col justify-between w-full h-full"
+                >
+                  <div className="h-[260px] relative overflow-hidden bg-ivory-dark">
+                    <motion.img 
+                      src={imgUrl} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover" 
+                      whileHover={{ scale: 1.05 }}
+                      transition={springTransition}
+                    />
+                    <span className="absolute top-3 right-3">
+                      <Badge variant={
+                        item.status === 'active' ? 'sage' :
+                        item.status === 'pending_approval' ? 'gold' : 'charcoal'
+                      }>
+                        {item.status}
+                      </Badge>
                     </span>
-                    <h4 className="font-display text-sm font-semibold truncate text-charcoal">{item.title}</h4>
-                    <span className="text-[9px] font-mono text-charcoal-light block">Daily Rent: ₹{item.price_1day}/day</span>
                   </div>
+                  <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-mono text-champagne uppercase font-bold tracking-widest block">
+                        {item.category}
+                      </span>
+                      <h4 className="font-display text-sm font-semibold truncate text-charcoal">{item.title}</h4>
+                      <span className="text-[9px] font-mono text-charcoal-light block">Daily Rent: ₹{item.price_1day}/day</span>
+                    </div>
 
-                  <div className="flex gap-2 pt-3 border-t border-border/40 mt-4 flex-wrap">
-                    {item.status === 'draft' && (
-                      <Button
-                        variant="gold"
-                        onClick={() => handleSubmitForApproval(item.id)}
-                        className="!h-10 !px-4 text-[10px] font-mono tracking-wider uppercase flex-grow flex items-center justify-center gap-1 cursor-pointer"
+                    <div className="flex gap-2 pt-3 border-t border-border/40 mt-4 flex-wrap">
+                      {item.status === 'draft' && (
+                        <Button
+                          variant="gold"
+                          onClick={() => handleSubmitForApproval(item.id)}
+                          className="!h-[52px] !px-4 text-[10px] font-mono tracking-wider uppercase flex-grow flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Send size={12} /> Submit Approval
+                        </Button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteListing(item.id)}
+                        className="h-[52px] px-4 border border-border text-error hover:bg-error/10 hover:border-error/30 rounded flex items-center justify-center transition-colors cursor-pointer flex-grow"
+                        title="Delete listing"
                       >
-                        <Send size={12} /> Submit Approval
-                      </Button>
-                    )}
-                    <button
-                      onClick={() => handleDeleteListing(item.id)}
-                      className="h-10 px-4 border border-border text-error hover:bg-error/10 hover:border-error/30 rounded flex items-center justify-center transition-colors cursor-pointer flex-grow"
-                      title="Delete listing"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             );
           })}
         </div>
@@ -448,6 +467,6 @@ export default function SellerListingsPage() {
         </form>
       </Modal>
 
-    </div>
+      </motion.div>
   );
 }
