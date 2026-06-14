@@ -33,19 +33,19 @@ export const useUIStore = create<UIState>((set, get) => ({
   overlayCount: 0,
 
   setCartOpen: (open) => {
-    const { overlayCount, registerOverlay, unregisterOverlay } = get();
-    if (open && !overlayCount) registerOverlay();
-    else if (!open && overlayCount > 0) unregisterOverlay();
+    const { registerOverlay, unregisterOverlay } = get();
+    if (open) registerOverlay();
+    else unregisterOverlay();
     set({ cartOpen: open });
   },
   setAIStylistOpen: (open) => {
-    const { overlayCount, registerOverlay, unregisterOverlay } = get();
-    if (open && !overlayCount) registerOverlay();
-    else if (!open && overlayCount > 0) unregisterOverlay();
+    const { registerOverlay, unregisterOverlay } = get();
+    if (open) registerOverlay();
+    else unregisterOverlay();
     set({ aiStylistOpen: open });
   },
   setActiveModal: (modalId) => {
-    const { overlayCount, registerOverlay, unregisterOverlay, activeModal } = get();
+    const { registerOverlay, unregisterOverlay, activeModal } = get();
     if (modalId && !activeModal) registerOverlay();
     else if (!modalId && activeModal) unregisterOverlay();
     set({ activeModal: modalId });

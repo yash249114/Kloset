@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Routes that require authentication
-const protectedPaths = ['/dashboard', '/seller', '/admin', '/booking', '/outfit/new'];
+const protectedPaths = ['/dashboard', '/seller', '/admin', '/booking', '/outfit/new', '/profile', '/orders', '/wishlist'];
 
 // Routes that should redirect to dashboard if already authenticated
 const authPaths = ['/auth/login', '/auth/register', '/login', '/register'];
@@ -38,6 +38,9 @@ export const config = {
     '/admin/:path*',
     '/booking/:path*',
     '/outfit/new',
+    '/profile/:path*',
+    '/orders/:path*',
+    '/wishlist/:path*',
     '/auth/login',
     '/auth/register',
     '/login',

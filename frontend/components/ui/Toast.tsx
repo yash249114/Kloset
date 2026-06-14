@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Toaster as SonnerToaster } from 'sonner';
+import { Z_INDEX } from '@/lib/constants';
 
 export default function Toast() {
   return (
@@ -10,9 +11,9 @@ export default function Toast() {
       theme="light"
       toastOptions={{
         style: {
-          background: '#FFFCF8', // --warm-white
-          color: '#2C2C2C', // --charcoal
-          border: '1px solid #E8E0D5', // --border
+          background: '#FFFCF8',
+          color: '#2C2C2C',
+          border: '1px solid #E8E0D5',
           borderRadius: '4px',
           fontFamily: 'Inter, system-ui, sans-serif',
           fontSize: '12px',
@@ -22,7 +23,7 @@ export default function Toast() {
         className: 'kloset-toast shadow-lg',
       }}
       style={{
-        zIndex: 600, // Enforced Strict z-index Hierarchy
+        zIndex: Z_INDEX.TOAST,
       }}
     />
   );

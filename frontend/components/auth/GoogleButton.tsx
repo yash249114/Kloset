@@ -33,9 +33,10 @@ export default function GoogleButton({
   disabled = false,
 }: GoogleButtonProps) {
   const signIn = useGoogleLogin({
-    onSuccess,
+    onSuccess: (tokenResponse) => {
+      onSuccess({ credential: tokenResponse.access_token });
+    },
     onError: onError || (() => {}),
-    flow: 'auth-code',
   });
 
   const handleClick = () => {
