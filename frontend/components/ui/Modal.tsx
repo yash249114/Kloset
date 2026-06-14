@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { Z_INDEX } from '@/lib/constants';
+import { lockScroll, unlockScroll } from '@/lib/scroll-lock';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -29,15 +31,14 @@ export default function Modal({
     return () => clearTimeout(timer);
   }, []);
 
-  // Lock and unlock background body scrolling
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      lockScroll();
     } else {
-      document.body.style.overflow = '';
+      unlockScroll();
     }
     return () => {
-      document.body.style.overflow = '';
+      if (isOpen) unlockScroll();
     };
   }, [isOpen]);
 
@@ -53,7 +54,7 @@ export default function Modal({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: Z_INDEX.MODAL }}>
           
           {/* Backdrop Overlay (z-index implicit in container) */}
           <motion.div

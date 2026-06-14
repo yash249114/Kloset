@@ -9,6 +9,7 @@ import { useUIStore } from '@/store/useUIStore';
 import Drawer from '@/components/ui/Drawer';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { Z_INDEX } from '@/lib/constants';
 
 export default function CartDrawer() {
   const {
@@ -74,7 +75,7 @@ export default function CartDrawer() {
       isOpen={cartOpen}
       onClose={() => setCartOpen(false)}
       title="Shopping Cart"
-      zIndex={300} // Cart Drawer = 300 (Strict z-index)
+      zIndex={Z_INDEX.CART_DRAWER}
       maxWidth="480px"
     >
       <div className="flex flex-col h-full font-sans select-none text-charcoal">

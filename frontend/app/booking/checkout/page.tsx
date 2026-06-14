@@ -6,9 +6,10 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, ShieldCheck, CreditCard, ArrowLeft, Lock, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { bookingsAPI, outfitsAPI } from '@/lib/api';
+import { bookingsAPI, outfitsAPI, paymentsAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCartStore } from '@/store/useCartStore';
+import { loadRazorpayScript, openRazorpay } from '@/lib/razorpay';
 import type { Outfit, Address } from '@/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -86,8 +87,52 @@ function CheckoutContent() {
         delivery_type: deliveryType,
         delivery_address_id: deliveryType === 'delivery' ? selectedAddress : undefined,
       });
-      clearCart();
-      router.push(`/booking/confirmation?id=${booking.id}`);
+
+      const razorpayOrderId = booking.razorpay_order_id;
+      if (!razorpayOrderId) {
+        toast.error('Payment gateway did not return an order ID.');
+        setProcessing(false);
+        return;
+      }
+
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        toast.error('Failed to load payment gateway. Please check your connection.');
+        setProcessing(false);
+        return;
+      }
+
+      const result = await openRazorpay({
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_mock_keys',
+        amount: Math.round((booking.total_amount || calculateTotal()) * 100),
+        currency: 'INR',
+        name: 'Kloset Luxe',
+        description: `Rental: ${outfit.title}`,
+        order_id: razorpayOrderId,
+        prefill: {
+          name: user?.name || 'Premium Renter',
+          email: user?.email || 'renter@kloset.in',
+          contact: user?.phone || '9876543210',
+        },
+        theme: { color: '#2C2C2C' },
+      });
+
+      if (result.status === 'success') {
+        const paymentResp = result.response as any;
+        await paymentsAPI.verify({
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: paymentResp.razorpay_payment_id,
+          razorpay_signature: paymentResp.razorpay_signature,
+        });
+        clearCart();
+        toast.success('Payment confirmed! Booking is complete.');
+        router.push(`/booking/confirmation?id=${booking.id}`);
+      } else if (result.status === 'failed') {
+        toast.error('Payment failed. Please try again.');
+      } else {
+        toast('Payment cancelled. Your booking is pending payment.');
+        router.push(`/booking/confirmation?id=${booking.id}&pending=true`);
+      }
     } catch {
       toast.error('Failed to place order. Please try again.');
     } finally {
@@ -274,7 +319,7 @@ function CheckoutContent() {
                   Security deposit is fully refundable upon timely return and quality check.
                 </p>
                 <Button variant="primary" onClick={handlePlaceOrder} isLoading={processing} className="w-full h-[52px] cursor-pointer">
-                  <Lock size={14} className="mr-2" /> Place Order Securely
+                  <Lock size={14} className="mr-2" /> Pay & Place Order
                 </Button>
               </Card>
             </motion.div>

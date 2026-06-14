@@ -5,6 +5,7 @@ import { Sparkles, Send, RotateCcw, User, Bot } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import Drawer from '@/components/ui/Drawer';
 import client from '@/lib/api';
+import { Z_INDEX } from '@/lib/constants';
 
 export interface ChatMessage {
   sender: 'user' | 'bot';
@@ -122,7 +123,7 @@ export default function AIStylistDrawer() {
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
       title="AI Stylist Consultation"
-      zIndex={400} // AI Chat Widget = 400 (Strict z-index)
+      zIndex={Z_INDEX.AI_DRAWER}
       maxWidth="480px"
     >
       <div className="flex flex-col h-[calc(100vh-160px)] font-sans select-none text-charcoal">

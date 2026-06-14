@@ -4,14 +4,16 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { Z_INDEX } from '@/lib/constants';
+import { lockScroll, unlockScroll } from '@/lib/scroll-lock';
 
 export interface DrawerProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  zIndex?: number; // Configurable layer depth (Cart = 300, AI = 400)
-  maxWidth?: string; // Configurable width default '480px'
+  zIndex?: number;
+  maxWidth?: string;
 }
 
 export default function Drawer({
@@ -19,7 +21,7 @@ export default function Drawer({
   onClose,
   title,
   children,
-  zIndex = 300,
+  zIndex = Z_INDEX.CART_DRAWER,
   maxWidth = '480px',
 }: DrawerProps) {
   const [mounted, setMounted] = useState(false);
@@ -31,15 +33,14 @@ export default function Drawer({
     return () => clearTimeout(timer);
   }, []);
 
-  // Lock and unlock background body scrolling
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      lockScroll();
     } else {
-      document.body.style.overflow = '';
+      unlockScroll();
     }
     return () => {
-      document.body.style.overflow = '';
+      if (isOpen) unlockScroll();
     };
   }, [isOpen]);
 

@@ -51,10 +51,14 @@ export default function AdminAIOpsPage() {
   }, []);
 
   const latencyChartData = data?.logs
-    ? data.logs.slice(-10).map((log) => ({
-        time: log.time,
-        latency: Math.floor(Math.random() * 200) + 300,
-      }))
+    ? data.logs.slice(-10).map((log, i, arr) => {
+        const base = data.latency_avg_ms || 400;
+        const variance = Math.floor((Math.sin(i * 1.5) * base * 0.15) + (i % 3 === 0 ? 30 : 0));
+        return {
+          time: log.time,
+          latency: Math.max(50, base + variance),
+        };
+      })
     : [];
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };

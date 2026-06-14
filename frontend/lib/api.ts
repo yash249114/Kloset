@@ -557,6 +557,19 @@ export const adminAPI = {
   },
 };
 
+// ─── PAYMENTS ENDPOINTS ────────────────────────────────
+export interface VerifyPaymentPayload {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+export const paymentsAPI = {
+  verify: async (payload: VerifyPaymentPayload): Promise<void> => {
+    await client.post('/payments/verify', payload);
+  },
+};
+
 // ─── DISPUTES ENDPOINTS ──────────────────────────────
 export interface RaiseDisputePayload {
   booking_id: string;

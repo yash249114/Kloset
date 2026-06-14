@@ -29,6 +29,8 @@ export default function SellerListingsPage() {
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingOutfit, setEditingOutfit] = useState<Outfit | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Form states
@@ -86,6 +88,66 @@ export default function SellerListingsPage() {
     setDelivery(true);
     setDeliveryFee(200);
     setUploadedImages([]);
+  };
+
+  const openEditModal = (item: Outfit) => {
+    setEditingOutfit(item);
+    setTitle(item.title);
+    setDescription(item.description || '');
+    setCategory(item.category);
+    setFabric(item.fabric || '');
+    setSelectedSizes(item.sizes || ['M']);
+    setPrice1Day(item.price_1day || 1500);
+    setPrice3Day(item.price_3day || 3000);
+    setPrice7Day(item.price_7day || 5000);
+    setDeposit(item.security_deposit || 4000);
+    setDelivery(item.delivery_available);
+    setDeliveryFee(item.delivery_fee || 200);
+    setUploadedImages(item.images?.map((img, idx) => ({ url: img.url, cloudinary_id: img.id, is_primary: img.is_primary, sort_order: img.sort_order ?? idx })) || []);
+    setCity(item.city || '');
+    setState(item.state || '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditListing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOutfit) return;
+    setSaving(true);
+    try {
+      await outfitsAPI.update(editingOutfit.id, {
+        title,
+        description,
+        category,
+        fabric,
+        sizes: selectedSizes,
+        occasions: ['wedding', 'reception'],
+        colors: ['Gold', 'Ivory'],
+        accessories_included: [] as string[],
+        city,
+        state,
+        pincode,
+        price_1day: Number(price1Day),
+        price_3day: Number(price3Day),
+        price_7day: Number(price7Day),
+        security_deposit: Number(deposit),
+        delivery_available: delivery,
+        delivery_fee: Number(deliveryFee),
+        images: uploadedImages.map((img, idx) => ({
+          url: img.url,
+          cloudinary_id: img.cloudinary_id,
+          is_primary: idx === 0,
+          sort_order: idx,
+        })),
+      });
+      toast.success('Listing updated successfully!');
+      setIsEditModalOpen(false);
+      setEditingOutfit(null);
+      loadOutfits(true);
+    } catch {
+      toast.error('Failed to update listing.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCreateListing = async (e: React.FormEvent) => {
@@ -248,6 +310,13 @@ export default function SellerListingsPage() {
                     </div>
 
                     <div className="flex gap-2 pt-3 border-t border-border/40 mt-4 flex-wrap">
+                      <button
+                        onClick={() => openEditModal(item)}
+                        className="h-[52px] px-4 border border-border text-champagne hover:bg-champagne/10 hover:border-champagne/30 rounded flex items-center justify-center transition-colors cursor-pointer flex-grow"
+                        title="Edit listing"
+                      >
+                        <Edit2 size={14} />
+                      </button>
                       {item.status === 'draft' && (
                         <Button
                           variant="gold"
@@ -464,6 +533,125 @@ export default function SellerListingsPage() {
             </Button>
           </div>
 
+        </form>
+      </Modal>
+
+      {/* EDIT MODAL */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setEditingOutfit(null); }}
+        title="Edit Couture Listing"
+        size="lg"
+      >
+        <form onSubmit={handleEditListing} className="space-y-6 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Input
+                label="Outfit Title"
+                placeholder="e.g. Sabyasachi Heritage Red Silk Lehenga"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-[10px] font-mono tracking-widest uppercase text-charcoal-light font-bold block mb-1">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full min-h-[100px] p-4 text-sm font-sans bg-warm-white border border-border rounded outline-none focus:border-champagne"
+                placeholder="Describe the fabric weight, embroidery work, style guidelines..."
+                required
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono tracking-widest uppercase text-charcoal-light font-bold block mb-1">
+                Outfit Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as OutfitCategory)}
+                className="w-full h-[52px] px-4 border border-border bg-warm-white rounded outline-none text-xs font-mono uppercase tracking-wider text-charcoal focus:border-champagne"
+              >
+                {CATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Input
+              label="Fabric Details"
+              placeholder="e.g. Pure Silk Velvet, Georgette"
+              value={fabric}
+              onChange={(e) => setFabric(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2.5">
+            <span className="text-[10px] font-mono tracking-widest text-charcoal-light uppercase font-bold block">
+              Available Sizes
+            </span>
+            <div className="flex gap-2">
+              {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((sz) => {
+                const active = selectedSizes.includes(sz);
+                return (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => handleSizeToggle(sz)}
+                    className={`w-12 h-12 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border cursor-pointer ${
+                      active ? 'bg-charcoal text-white border-charcoal' : 'bg-white border-border text-charcoal-light hover:border-charcoal'
+                    }`}
+                  >
+                    {sz}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Input type="number" label="Rent 1-Day (₹)" value={price1Day} onChange={(e) => setPrice1Day(Number(e.target.value))} required />
+            <Input type="number" label="Rent 3-Day (₹)" value={price3Day} onChange={(e) => setPrice3Day(Number(e.target.value))} required />
+            <Input type="number" label="Rent 7-Day (₹)" value={price7Day} onChange={(e) => setPrice7Day(Number(e.target.value))} required />
+            <Input type="number" label="Refundable Deposit (₹)" value={deposit} onChange={(e) => setDeposit(Number(e.target.value))} required />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 pt-3">
+              <input type="checkbox" id="edit-delivery-check" checked={delivery} onChange={(e) => setDelivery(e.target.checked)}
+                className="w-4 h-4 border-border rounded outline-none focus:ring-1 focus:ring-champagne" />
+              <label htmlFor="edit-delivery-check" className="text-xs text-charcoal-light font-light cursor-pointer select-none">
+                Provide platform-wide delivery
+              </label>
+            </div>
+            {delivery && (
+              <Input type="number" label="Delivery Fee (₹)" value={deliveryFee} onChange={(e) => setDeliveryFee(Number(e.target.value))} required />
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} required />
+            <Input label="State" value={state} onChange={(e) => setState(e.target.value)} required />
+            <Input label="Pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} required />
+          </div>
+
+          <div className="border-t border-border pt-6">
+            <ImageUploader images={uploadedImages} onChange={setUploadedImages} maxImages={6} />
+          </div>
+
+          <div className="pt-6 border-t border-border flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => { setIsEditModalOpen(false); setEditingOutfit(null); }} className="cursor-pointer">
+              Cancel
+            </Button>
+            <Button type="submit" variant="gold" isLoading={saving} className="px-10 cursor-pointer">
+              Save Changes
+            </Button>
+          </div>
         </form>
       </Modal>
 

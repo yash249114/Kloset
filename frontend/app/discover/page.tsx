@@ -11,6 +11,8 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
+import { Z_INDEX } from '@/lib/constants';
+import { lockScroll, unlockScroll } from '@/lib/scroll-lock';
 
 const CATEGORY_OPTIONS: { label: string; value: OutfitCategory }[] = [
   { label: 'Lehenga', value: 'lehenga' },
@@ -458,7 +460,7 @@ function DiscoverContent() {
       {/* Mobile Drawer (Portal overlay) */}
       <AnimatePresence>
         {mobileFiltersOpen && (
-          <div className="fixed inset-0 z-[500] lg:hidden">
+          <div className="fixed inset-0 lg:hidden" style={{ zIndex: Z_INDEX.MOBILE_FILTERS }}>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.5 }}

@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Star, Calendar, MapPin, ShieldCheck, ChevronLeft, Heart, ShoppingBag, Sparkles, Check } from 'lucide-react';
+import { Star, Calendar, MapPin, ShieldCheck, ChevronLeft, Heart, ShoppingBag, Sparkles, Check, MessageSquare, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { outfitsAPI } from '@/lib/api';
+import { outfitsAPI, reviewsAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useWishlistStore } from '@/store/useWishlistStore';
 import { useCartStore } from '@/store/useCartStore';
-import type { Outfit } from '@/types';
+import type { Outfit, ReviewResponse } from '@/types';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
@@ -31,6 +31,9 @@ export default function OutfitDetailPage() {
   const [rentalDays, setRentalDays] = useState(3);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [recommendations, setRecommendations] = useState<Outfit[]>([]);
 
   useEffect(() => {
     const fetchOutfit = async () => {
@@ -46,6 +49,10 @@ export default function OutfitDetailPage() {
         end.setDate(end.getDate() + 3);
         setStartDate(today.toISOString().substring(0, 10));
         setEndDate(end.toISOString().substring(0, 10));
+        const reviewData = await reviewsAPI.listOutfitReviews(id);
+        setReviews(reviewData.reviews || []);
+        const trending = await outfitsAPI.getTrending(4);
+        setRecommendations(trending.filter((o) => o.id !== id).slice(0, 4));
       } catch {
         toast.error('Failed to load outfit details.');
       } finally {
@@ -297,6 +304,101 @@ export default function OutfitDetailPage() {
             </div>
           </motion.div>
         </div>
+
+        {/* Reviews Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...springTransition, delay: 0.4 }}
+          className="mt-16"
+        >
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <span className="text-[10px] font-mono tracking-[0.2em] text-champagne uppercase font-bold block mb-1">
+                Client Reviews
+              </span>
+              <h2 className="text-2xl font-display font-medium text-charcoal">What Renters Say</h2>
+            </div>
+            {outfit.rating_avg > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Star size={18} className="fill-gold text-gold" />
+                <span className="font-bold text-charcoal">{outfit.rating_avg.toFixed(1)}</span>
+                <span className="text-charcoal-light font-mono text-xs">({outfit.rating_count} reviews)</span>
+              </div>
+            )}
+          </div>
+
+          {reviewsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="shimmer h-32 rounded bg-ivory-dark animate-pulse" />
+              ))}
+            </div>
+          ) : reviews.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {reviews.map((review) => (
+                <Card key={review.id} padding="md" className="bg-white border-border text-left">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-ivory-dark flex items-center justify-center text-xs font-bold text-charcoal flex-shrink-0">
+                      {(review.reviewer_name || 'U')[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-charcoal truncate">{review.reviewer_name || 'Verified Renter'}</span>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star key={star} size={11} className={star <= review.rating ? 'fill-gold text-gold' : 'text-charcoal-light'} />
+                          ))}
+                        </div>
+                      </div>
+                      {review.comment && <p className="text-xs text-charcoal-light leading-relaxed">{review.comment}</p>}
+                      <span className="text-[9px] text-charcoal-light/60 font-mono block mt-2">{new Date(review.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card padding="md" className="bg-white border-border text-center">
+              <MessageSquare size={28} className="mx-auto text-champagne mb-2" />
+              <p className="text-xs text-charcoal-light">No reviews yet. Be the first to rent and share your experience!</p>
+            </Card>
+          )}
+        </motion.div>
+
+        {/* Recommendations Section */}
+        {recommendations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springTransition, delay: 0.5 }}
+            className="mt-16"
+          >
+            <div className="mb-8">
+              <span className="text-[10px] font-mono tracking-[0.2em] text-champagne uppercase font-bold block mb-1">
+                You May Also Like
+              </span>
+              <h2 className="text-2xl font-display font-medium text-charcoal">More Luxe Picks</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {recommendations.map((rec) => (
+                <Link key={rec.id} href={`/outfit/${rec.id}`} className="block group">
+                  <Card padding="none" className="bg-white border-border overflow-hidden">
+                    <div className="aspect-[3/4] bg-ivory-dark overflow-hidden">
+                      <img src={rec.images?.[0]?.url || ''} alt={rec.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                    <div className="p-3 space-y-1">
+                      <span className="text-[9px] font-mono uppercase tracking-wider text-champagne font-bold block truncate">{rec.category}</span>
+                      <h4 className="text-xs font-semibold text-charcoal truncate">{rec.title}</h4>
+                      <span className="text-[10px] font-mono text-charcoal-light">₹{rec.price_1day?.toLocaleString('en-IN')}<span className="text-[8px]">/day</span></span>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );
