@@ -1,0 +1,2 @@
+internal\ai\service.go:8:2: no required module provides package github.com/google/generative-ai-go/genai; to add it:
+	go get github.com/google/generative-ai-go/genai
