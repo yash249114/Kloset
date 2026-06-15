@@ -105,7 +105,7 @@ export default function ProfilePage() {
         const userAddresses = await userAPI.getAddresses();
         setAddresses(userAddresses);
       } catch {
-        console.error('Failed to load profile details', err);
+        console.error('Failed to load profile details');
         toast.error('Failed to fetch profile settings from API.');
       } finally {
         setProfileLoading(false);
@@ -143,7 +143,7 @@ export default function ProfilePage() {
     } catch {
       toast.error('Failed to update profile.');
     } finally {
-      setSaving(false);
+      setUpdatingBusiness(false);
     }
   };
 
@@ -174,7 +174,7 @@ export default function ProfilePage() {
     } catch {
       toast.error('Failed to add address.');
     } finally {
-      setSaving(false);
+      setUpdatingAddress(false);
     }
   };
 
