@@ -1356,3 +1356,14 @@ Error: socket hang up
  GET / 200 in 155ms (next.js: 12ms, application-code: 143ms)
  GET /robots.txt 404 in 735ms (next.js: 637ms, application-code: 98ms)
 ✓ Compiled in 128ms
+✓ Compiled in 140ms
+Persisting failed: Unable to write SST file 00000803.sst
+
+Caused by:
+    The system cannot find the path specified. (os error 3)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)

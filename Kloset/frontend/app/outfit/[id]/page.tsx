@@ -33,7 +33,7 @@ export default function OutfitDetailPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-  const [, setReviewsLoading] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<Outfit[]>([]);
 
   useEffect(() => {
