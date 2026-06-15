@@ -69,15 +69,6 @@ func (s *Service) Create(renterID string, req *CreateBookingRequest) (*Booking, 
 		return nil, errors.New("return date must be after or equal to pickup date")
 	}
 
-	// Check if already booked for those dates
-	hasOverlap, err := s.repo.HasOverlap(outfitUUID, pickupDate, returnDate)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check availability: %w", err)
-	}
-	if hasOverlap {
-		return nil, errors.New("this outfit is already booked for the selected dates")
-	}
-
 	// Fetch outfit details
 	outfitDetails, err := s.outfitRepo.FindByID(outfitUUID)
 	if err != nil {
@@ -159,8 +150,8 @@ func (s *Service) Create(renterID string, req *CreateBookingRequest) (*Booking, 
 		SellerAcceptDeadline: &deadline,
 	}
 
-	if err := s.repo.Create(booking); err != nil {
-		return nil, fmt.Errorf("failed to save booking: %w", err)
+	if err := s.repo.CreateIfAvailable(booking, outfitUUID, pickupDate, returnDate); err != nil {
+		return nil, err
 	}
 
 	// Trigger notifications and email alerts to seller
@@ -207,7 +198,9 @@ func (s *Service) GetByID(idStr string, userID string) (*Booking, error) {
 
 	// Access control: only Renter, Seller or Admin can view
 	var userRole string
-	_ = s.repo.db.Table("users").Select("role").Where("id = ?", userUUID).Scan(&userRole).Error
+	if err := s.repo.db.Table("users").Select("role").Where("id = ?", userUUID).Scan(&userRole).Error; err != nil {
+		log.Warn().Err(err).Str("user_id", userID).Msg("GetByID: failed to query user role, defaulting to unauthorized")
+	}
 
 	if booking.RenterID != userUUID && booking.SellerID != userUUID && userRole != "admin" {
 		return nil, errors.New("unauthorized to view this booking")
@@ -256,7 +249,9 @@ func (s *Service) UpdateStatus(idStr, userID, newStatus string) (*Booking, error
 	}
 
 	var userRole string
-	_ = s.repo.db.Table("users").Select("role").Where("id = ?", userUUID).Scan(&userRole).Error
+	if err := s.repo.db.Table("users").Select("role").Where("id = ?", userUUID).Scan(&userRole).Error; err != nil {
+		log.Warn().Err(err).Str("user_id", userID).Msg("UpdateStatus: failed to query user role, defaulting to unauthorized")
+	}
 
 	// Status transition validations (simplified state machine)
 	switch newStatus {
@@ -423,7 +418,9 @@ func (s *Service) Cancel(idStr, userID, reason string) error {
 	}
 
 	var userRole string
-	_ = s.repo.db.Table("users").Select("role").Where("id = ?", userUUID).Scan(&userRole).Error
+	if err := s.repo.db.Table("users").Select("role").Where("id = ?", userUUID).Scan(&userRole).Error; err != nil {
+		log.Warn().Err(err).Str("user_id", userID).Msg("Cancel: failed to query user role, defaulting to unauthorized")
+	}
 
 	// Renter can cancel anytime before pickup
 	// Seller can cancel anytime before pickup (penalizes trust score)

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Star, Calendar, MapPin, ShieldCheck, ChevronLeft, Heart, ShoppingBag, Sparkles, Check, MessageSquare, ThumbsUp } from 'lucide-react';
+import { Star, Calendar, MapPin, ShieldCheck, ChevronLeft, Heart, ShoppingBag, Sparkles, Check, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { outfitsAPI, reviewsAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';

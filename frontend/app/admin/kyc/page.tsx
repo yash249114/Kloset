@@ -18,10 +18,7 @@ export default function AdminKYCPage() {
       const queue = await adminAPI.getKYCQueue();
       setUsers(queue);
     } catch {
-      // Mock fallbacks
-      setUsers([
-        { id: 's3', name: 'Traditional Threads', email: 'threads@tradition.in', phone: '9122340982', kyc_status: 'submitted', created_at: new Date().toISOString() }
-      ]);
+      setUsers([]);
     } finally {
       setLoading(false);
     }

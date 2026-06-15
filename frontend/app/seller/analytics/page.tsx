@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, TrendingUp, Calendar, Users, Eye, RefreshCcw } from 'lucide-react';
+import { TrendingUp, Calendar, Users, Eye, RefreshCcw } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { bookingsAPI, outfitsAPI } from '@/lib/api';
 import type { Outfit, Booking } from '@/types';
@@ -55,7 +55,22 @@ export default function SellerAnalyticsPage() {
   };
 
   useEffect(() => {
-    loadData();
+    const init = async () => {
+      setLoading(true);
+      try {
+        const [outfitsResp, bookingsResp] = await Promise.all([
+          outfitsAPI.getSellerOutfits(1),
+          bookingsAPI.listSellerBookings(1, 50),
+        ]);
+        setOutfits(outfitsResp.outfits || []);
+        setBookings(bookingsResp.bookings || []);
+      } catch {
+        toast.error('Failed to load analytics data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const totalViews = useMemo(() => outfits.reduce((sum, o) => sum + (o.view_count || 0), 0), [outfits]);

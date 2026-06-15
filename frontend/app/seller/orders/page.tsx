@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCcw, Calendar, Truck, Check, AlertCircle } from 'lucide-react';
+import { RefreshCcw, Calendar, Truck, Check } from 'lucide-react';
 import { bookingsAPI } from '@/lib/api';
 import type { Booking } from '@/types';
 import { toast } from 'sonner';

@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, RefreshCcw, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { adminAPI } from '@/lib/api';
+import type { AdminLogEntry } from '@/lib/api';
 import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
 
 export default function AdminSecurityPage() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AdminLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadLogs = async () => {
@@ -78,7 +78,7 @@ export default function AdminSecurityPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {logs.map((log: any) => (
+            {logs.map((log) => (
               <div key={log.id} className="flex items-center justify-between p-4 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-xs">
                 <div className="flex items-center gap-3">
                   {log.level === 'error' ? <AlertTriangle size={14} className="text-red-400" /> : <CheckCircle2 size={14} className="text-[#4CAF7D]" />}

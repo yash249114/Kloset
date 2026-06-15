@@ -6,6 +6,7 @@ import RenterNavbar from './RenterNavbar';
 import RenterFooter from './RenterFooter';
 import SellerSidebar from './SellerSidebar';
 import AdminSidebar from './AdminSidebar';
+import AIOpsPanel from '@/components/admin/AIOpsPanel';
 import { useAuthStore } from '@/store/useAuthStore';
 import Toast from '@/components/ui/Toast';
 
@@ -30,6 +31,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 ml-[240px] p-8 min-h-screen">
           {children}
         </main>
+        <AIOpsPanel />
         <Toast />
       </div>
     );

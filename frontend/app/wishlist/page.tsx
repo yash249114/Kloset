@@ -40,7 +40,7 @@ export default function WishlistPage() {
     }
   };
 
-  const handleAddToCart = (outfit: any) => {
+  const handleAddToCart = (outfit: { id: string; title: string; price_3day?: number | null; security_deposit?: number | null; sizes?: string[]; images?: Array<{ url: string }>; seller_id: string; seller?: { name: string } }) => {
     const mainImg = outfit.images?.[0]?.url || '';
     addItem({
       id: outfit.id,

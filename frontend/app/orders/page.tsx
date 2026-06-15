@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
   Calendar, 
-  MapPin, 
   ChevronRight, 
   Star, 
   Truck, 
@@ -16,7 +15,6 @@ import {
   ShieldAlert, 
   Undo2, 
   Inbox,
-  XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { bookingsAPI, reviewsAPI, disputesAPI } from '@/lib/api';
@@ -77,6 +75,19 @@ export default function RenterOrdersPage() {
   const [disputeDesc, setDisputeDesc] = useState('');
   const [submittingDispute, setSubmittingDispute] = useState(false);
 
+  const loadOrders = async () => {
+    if (!isAuthenticated) return;
+    setLoading(true);
+    try {
+      const resp = await bookingsAPI.listMyBookings(1, 20);
+      setBookings(resp.bookings);
+    } catch {
+      toast.error('Failed to load transaction records.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast.error('Please sign in to view your orders.');
@@ -86,19 +97,6 @@ export default function RenterOrdersPage() {
 
     loadOrders();
   }, [isAuthenticated, authLoading]);
-
-  const loadOrders = async () => {
-    if (!isAuthenticated) return;
-    setLoading(true);
-    try {
-      const resp = await bookingsAPI.listMyBookings(1, 20);
-      setBookings(resp.bookings);
-    } catch (err) {
-      toast.error('Failed to load transaction records.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUpdateStatus = async (bookingId: string, nextStatus: BookingStatus) => {
     try {
@@ -212,7 +210,7 @@ export default function RenterOrdersPage() {
           ].map((tab) => (
             <motion.button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'all' | 'active' | 'completed')}
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
               transition={springTransition}

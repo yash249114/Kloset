@@ -5,7 +5,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { motion } from 'framer-motion';
 
 interface GoogleButtonProps {
-  onSuccess: (credentialResponse: any) => void;
+  onSuccess: (credentialResponse: { credential?: string }) => void;
   onError?: () => void;
   variant?: 'primary' | 'outline';
   children?: React.ReactNode;

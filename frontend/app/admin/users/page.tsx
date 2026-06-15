@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Star, RefreshCcw } from 'lucide-react';
+import { Search, Star, RefreshCcw, X, Check } from 'lucide-react';
 import { adminAPI, AdminUserEntry } from '@/lib/api';
+import client from '@/lib/api';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { toast } from 'sonner';
@@ -12,6 +13,8 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [bannedIds, setBannedIds] = useState<Set<string>>(new Set());
+  const [banningId, setBanningId] = useState<string | null>(null);
 
   const loadUsers = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -28,6 +31,24 @@ export default function AdminUsersPage() {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  const toggleBan = async (userId: string, name: string, currentlyBanned: boolean) => {
+    setBanningId(userId);
+    try {
+      await client.post(`/admin/users/${userId}/ban`);
+      setBannedIds(prev => {
+        const next = new Set(prev);
+        if (currentlyBanned) next.delete(userId);
+        else next.add(userId);
+        return next;
+      });
+      toast.success(`${currentlyBanned ? 'Unbanned' : 'Banned'} ${name}`);
+    } catch {
+      toast.error(`Failed to ${currentlyBanned ? 'unban' : 'ban'} ${name}.`);
+    } finally {
+      setBanningId(null);
+    }
+  };
 
   const filtered = users.filter(
     (u) =>
@@ -120,6 +141,7 @@ export default function AdminUsersPage() {
                   <th className="pb-3 font-semibold">KYC</th>
                   <th className="pb-3 font-semibold">Joined</th>
                   <th className="pb-3 font-semibold text-right">Verified</th>
+                  <th className="pb-3 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#2A2A2A]/40">
@@ -154,6 +176,26 @@ export default function AdminUsersPage() {
                       <Badge variant={u.is_verified ? 'success' : 'error'}>
                         {u.is_verified ? 'yes' : 'no'}
                       </Badge>
+                    </td>
+                    <td className="py-4 text-right">
+                      <button
+                        onClick={() => toggleBan(u.id, u.name, bannedIds.has(u.id))}
+                        disabled={banningId === u.id}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-mono font-semibold uppercase tracking-wider border cursor-pointer transition-colors disabled:opacity-50 ${
+                          bannedIds.has(u.id)
+                            ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/30 hover:bg-emerald-400/20'
+                            : 'bg-error/10 text-error border-error/30 hover:bg-error/20'
+                        }`}
+                      >
+                        {banningId === u.id ? (
+                          <RefreshCcw size={11} className="animate-spin" />
+                        ) : bannedIds.has(u.id) ? (
+                          <Check size={11} />
+                        ) : (
+                          <X size={11} />
+                        )}
+                        {bannedIds.has(u.id) ? 'Unban' : 'Ban'}
+                      </button>
                     </td>
                   </tr>
                 ))}

@@ -1,11 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MessageSquare, RefreshCcw, Search, ChevronRight, Clock } from 'lucide-react';
 import { supportAPI } from '@/lib/api';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+
+interface SupportTicket {
+  id: string;
+  subject: string;
+  status: string;
+  renterName?: string;
+  created_at: string;
+}
 
 const STATUS_MAP: Record<string, { label: string; variant: 'gold' | 'sage' | 'rose' | 'outline' }> = {
   open: { label: 'Open', variant: 'gold' },
@@ -15,8 +23,9 @@ const STATUS_MAP: Record<string, { label: string; variant: 'gold' | 'sage' | 'ro
 };
 
 export default function AdminSupportPage() {
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
 
   const loadTickets = async () => {
     setLoading(true);
@@ -31,6 +40,13 @@ export default function AdminSupportPage() {
   };
 
   useEffect(() => { loadTickets(); }, []);
+
+  const filteredTickets = query
+    ? tickets.filter(t =>
+        (t.subject?.toLowerCase() || '').includes(query.toLowerCase()) ||
+        (t.renterName?.toLowerCase() || '').includes(query.toLowerCase())
+      )
+    : tickets;
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
@@ -55,21 +71,22 @@ export default function AdminSupportPage() {
 
       <div className="relative max-w-md">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8C8C]" size={16} />
-        <input type="text" placeholder="Search tickets..."
+        <input type="text" placeholder="Search tickets..." value={query}
+          onChange={(e) => setQuery(e.target.value)}
           className="w-full h-[48px] pl-12 pr-4 text-xs font-sans bg-[#1A1A1A] border border-[#2A2A2A] rounded outline-none focus:border-[#C9A96E] text-[#E8E8E8] placeholder-[#8C8C8C]" />
       </div>
 
       <Card padding="md" theme="admin">
         {loading ? (
           <div className="space-y-4 animate-pulse">{[1,2,3,4,5].map(i => <div key={i} className="h-14 bg-[#2A2A2A] rounded" />)}</div>
-        ) : tickets.length === 0 ? (
+        ) : filteredTickets.length === 0 ? (
           <div className="py-16 text-center">
             <MessageSquare size={28} className="mx-auto text-[#C9A96E] mb-3" />
             <p className="text-xs font-mono text-[#8C8C8C]">No support tickets found.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {tickets.map((ticket: any) => {
+            {filteredTickets.map((ticket) => {
               const statusInfo = STATUS_MAP[ticket.status] || STATUS_MAP.open;
               return (
                 <div key={ticket.id} className="flex items-center justify-between p-5 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg hover:bg-[#222] transition-colors cursor-pointer">

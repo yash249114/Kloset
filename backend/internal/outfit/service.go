@@ -34,6 +34,10 @@ func (s *Service) Create(sellerID string, req *CreateOutfitRequest) (*OutfitResp
 		outfitSlug = fmt.Sprintf("%s-%s", outfitSlug, uuid.New().String()[:8])
 	}
 
+	if len(req.Images) > 6 {
+		return nil, errors.New("maximum of 6 images per outfit allowed")
+	}
+
 	desc := req.Description
 	images := make([]OutfitImage, len(req.Images))
 	for i, img := range req.Images {

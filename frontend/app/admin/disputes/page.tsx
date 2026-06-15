@@ -28,25 +28,7 @@ export default function AdminDisputesPage() {
       const list = await adminAPI.getDisputes();
       setDisputes(list);
     } catch {
-      // Mock fallbacks
-      setDisputes([
-        {
-          id: 'disp-1',
-          booking_id: 'b-mock-1',
-          raised_by: 'u1',
-          against: 's1',
-          reason: 'Damaged Product Delivered',
-          description: 'The lehenga arrived with a visible ink stain on the inner border.',
-          status: 'open',
-          resolution: null,
-          resolution_note: null,
-          refund_amount: 0,
-          renter_name: 'Alok Mishra',
-          outfit_title: 'Gold Zardozi Lehenga',
-          deposit_amount: 8000,
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      setDisputes([]);
     } finally {
       setLoading(false);
     }

@@ -7,10 +7,12 @@ import { adminAPI } from '@/lib/api';
 import type { Booking } from '@/types';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import { toast } from 'sonner';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
 
   const loadOrders = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -18,6 +20,7 @@ export default function AdminOrdersPage() {
       const resp = await adminAPI.getBookings(1, 50);
       setOrders(resp.bookings || []);
     } catch {
+      toast.error('Failed to load orders.');
       setOrders([]);
     } finally {
       setLoading(false);
@@ -25,6 +28,13 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => { loadOrders(); }, []);
+
+  const filteredOrders = query
+    ? orders.filter(o =>
+        (o.booking_ref?.toLowerCase() || '').includes(query.toLowerCase()) ||
+        (o.renter?.name?.toLowerCase() || '').includes(query.toLowerCase())
+      )
+    : orders;
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
@@ -49,7 +59,8 @@ export default function AdminOrdersPage() {
 
       <div className="relative max-w-md">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8C8C8C]" size={16} />
-        <input type="text" placeholder="Search by booking ref or renter..."
+        <input type="text" placeholder="Search by booking ref or renter..." value={query}
+          onChange={(e) => setQuery(e.target.value)}
           className="w-full h-[48px] pl-12 pr-4 text-xs font-sans bg-[#1A1A1A] border border-[#2A2A2A] rounded outline-none focus:border-[#C9A96E] text-[#E8E8E8] placeholder-[#8C8C8C]" />
       </div>
 
@@ -58,9 +69,9 @@ export default function AdminOrdersPage() {
           <div className="space-y-4 animate-pulse">
             {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-[#2A2A2A] rounded" />)}
           </div>
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-xs font-mono text-[#8C8C8C]">No orders found. All rental transactions will appear here.</p>
+            <p className="text-xs font-mono text-[#8C8C8C]">No orders found matching your search.</p>
           </div>
         ) : (
           <table className="w-full text-left border-collapse text-xs">
@@ -74,7 +85,7 @@ export default function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2A2A2A]/60">
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-[#1A1A1A] transition-colors">
                   <td className="py-4 font-mono font-bold text-[#E8E8E8]">{order.booking_ref}</td>
                   <td className="py-4 text-[#8C8C8C]">{order.renter?.name || 'N/A'}</td>

@@ -8,13 +8,10 @@ import {
   MapPin, 
   Wallet, 
   ShieldCheck, 
-  Settings, 
   Plus, 
   Trash2, 
   Check, 
-  Sparkles,
   Building,
-  Star,
   FileCheck
 } from 'lucide-react';
 import { toast } from 'sonner';

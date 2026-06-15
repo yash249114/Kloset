@@ -4,12 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, MessageSquare } from 'lucide-react';
 import { reviewsAPI } from '@/lib/api';
+import type { ReviewResponse } from '@/lib/api';
 import Card from '@/components/ui/Card';
 
 export default function SellerReviewsPage() {
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ratingSummary, setRatingSummary] = useState({ avg: 4.8, total: 24, breakdown: { 5: 18, 4: 4, 3: 2, 2: 0, 1: 0 } });
+  const [, setRatingSummary] = useState<{ avg: number; total: number; breakdown: Record<number, number> }>({ avg: 4.8, total: 24, breakdown: { 5: 18, 4: 4, 3: 2, 2: 0, 1: 0 } });
 
   useEffect(() => {
     const load = async () => {
@@ -49,9 +50,9 @@ export default function SellerReviewsPage() {
               <div key={star} className="flex items-center gap-2 text-[10px]">
                 <span className="w-3 text-charcoal-light">{star}</span>
                 <div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
-                  <div className="h-full bg-champagne rounded-full" style={{ width: `${((ratingSummary.breakdown as any)[star] || 0) / ratingSummary.total * 100}%` }} />
+                  <div className="h-full bg-champagne rounded-full" style={{ width: `${((ratingSummary.breakdown as Record<number, number>)[star] || 0) / ratingSummary.total * 100}%` }} />
                 </div>
-                <span className="w-6 text-right text-charcoal-light font-mono">{(ratingSummary.breakdown as any)[star] || 0}</span>
+                <span className="w-6 text-right text-charcoal-light font-mono">{(ratingSummary.breakdown as Record<number, number>)[star] || 0}</span>
               </div>
             ))}
           </div>
@@ -66,7 +67,7 @@ export default function SellerReviewsPage() {
               <p className="text-xs font-mono text-charcoal-light">No reviews yet. Reviews will appear after renter bookings are completed.</p>
             </Card>
           ) : (
-            reviews.map((review: any) => (
+            reviews.map((review) => (
               <motion.div key={review.id} whileHover={{ y: -2 }} transition={springTransition}
                 className="bg-white border border-border rounded-xl p-6"
               >

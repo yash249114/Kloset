@@ -52,7 +52,7 @@ export default function NewOutfitPage() {
     }
   }, [isAuthenticated, authLoading]);
 
-  const updateForm = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
+  const updateForm = (key: string, value: string | boolean | string[]) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const toggleArrayItem = (key: 'occasions' | 'colors' | 'sizes' | 'accessories_included', value: string) => {
     setForm((prev) => ({

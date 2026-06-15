@@ -33,23 +33,34 @@ func NewService(db *gorm.DB, notifSvc *notification.Service, logSvc *logging.Ser
 }
 
 func (s *Service) GetStats() (map[string]interface{}, error) {
-	var usersCount int64
-	var outfitsCount int64
-	var bookingsCount int64
-	var activeBookings int64
+	var usersCount, outfitsCount, bookingsCount, activeBookings int64
 	var revenue float64
-	var disputesCount int64
-	var kycQueueCount int64
-	var pendingListingsCount int64
+	var disputesCount, kycQueueCount, pendingListingsCount int64
 
-	s.db.Table("users").Count(&usersCount)
-	s.db.Table("outfits").Count(&outfitsCount)
-	s.db.Table("bookings").Count(&bookingsCount)
-	s.db.Table("bookings").Where("status NOT IN ('cancelled', 'completed', 'returned')").Count(&activeBookings)
-	s.db.Table("transactions").Where("type = 'rental_payment' AND status = 'completed'").Select("COALESCE(SUM(amount), 0)").Scan(&revenue)
-	s.db.Table("disputes").Where("status = 'open'").Count(&disputesCount)
-	s.db.Table("users").Where("kyc_status = 'submitted'").Count(&kycQueueCount)
-	s.db.Table("outfits").Where("status = 'pending_approval'").Count(&pendingListingsCount)
+	if err := s.db.Table("users").Count(&usersCount).Error; err != nil {
+		log.Error().Err(err).Msg("GetStats: failed to count users")
+	}
+	if err := s.db.Table("outfits").Count(&outfitsCount).Error; err != nil {
+		log.Error().Err(err).Msg("GetStats: failed to count outfits")
+	}
+	if err := s.db.Table("bookings").Count(&bookingsCount).Error; err != nil {
+		log.Error().Err(err).Msg("GetStats: failed to count bookings")
+	}
+	if err := s.db.Table("bookings").Where("status NOT IN ('cancelled', 'completed', 'returned')").Count(&activeBookings).Error; err != nil {
+		log.Error().Err(err).Msg("GetStats: failed to count active bookings")
+	}
+	if err := s.db.Table("transactions").Where("type = 'rental_payment' AND status = 'completed'").Select("COALESCE(SUM(amount), 0)").Scan(&revenue).Error; err != nil {
+		log.Error().Err(err).Msg("GetStats: failed to sum revenue")
+	}
+	if err := s.db.Table("disputes").Where("status = 'open'").Count(&disputesCount).Error; err != nil {
+		log.Error().Err(err).Msg("GetStats: failed to count open disputes")
+	}
+	if err := s.db.Table("users").Where("kyc_status = 'submitted'").Count(&kycQueueCount).Error; err != nil {
+		log.Error().Err(err).Msg("GetStats: failed to count KYC queue")
+	}
+	if err := s.db.Table("outfits").Where("status = 'pending_approval'").Count(&pendingListingsCount).Error; err != nil {
+		log.Error().Err(err).Msg("GetStats: failed to count pending listings")
+	}
 
 	return map[string]interface{}{
 		"total_users":           usersCount,
@@ -325,6 +336,39 @@ func (s *Service) ListKYCQueue() ([]map[string]interface{}, error) {
 	return users, err
 }
 
+func (s *Service) BanUser(userID string) error {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return errors.New("invalid user id")
+	}
+
+	var currentActive bool
+	err = s.db.Table("users").Select("is_active").Where("id = ?", userUUID).Scan(&currentActive).Error
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	newActive := !currentActive
+	res := s.db.Table("users").Where("id = ?", userUUID).Update("is_active", newActive)
+	if res.Error != nil {
+		return errors.New("failed to update user ban status")
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("user not found")
+	}
+
+	action := "banned"
+	if newActive {
+		action = "unbanned"
+	}
+
+	if s.logSvc != nil {
+		s.logSvc.LogEvent("admin@test", action+" user: "+userID, "127.0.0.1", "warn")
+	}
+
+	return nil
+}
+
 func (s *Service) createInAppNotification(userID uuid.UUID, notifType, title, body string) error {
 	if s.notifSvc == nil {
 		return nil
@@ -334,10 +378,14 @@ func (s *Service) createInAppNotification(userID uuid.UUID, notifType, title, bo
 
 func (s *Service) GetAIOpsStats() (map[string]interface{}, error) {
 	var gbv float64
-	s.db.Table("transactions").Where("status = 'completed' AND type IN ('rental_payment', 'deposit_payment')").Select("COALESCE(SUM(amount), 0)").Scan(&gbv)
+	if err := s.db.Table("transactions").Where("status = 'completed' AND type IN ('rental_payment', 'deposit_payment')").Select("COALESCE(SUM(amount), 0)").Scan(&gbv).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to sum GBV")
+	}
 
 	var commission float64
-	s.db.Table("bookings").Where("payment_status = 'completed'").Select("COALESCE(SUM(platform_fee), 0)").Scan(&commission)
+	if err := s.db.Table("bookings").Where("payment_status = 'completed'").Select("COALESCE(SUM(platform_fee), 0)").Scan(&commission).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to sum commission")
+	}
 
 	dbSql, err := s.db.DB()
 	activeConnections := 1
@@ -345,12 +393,16 @@ func (s *Service) GetAIOpsStats() (map[string]interface{}, error) {
 		activeConnections = dbSql.Stats().InUse
 	}
 
-	var totalBookings int64
-	var totalDisputes int64
-	var openDisputes int64
-	s.db.Table("bookings").Count(&totalBookings)
-	s.db.Table("disputes").Count(&totalDisputes)
-	s.db.Table("disputes").Where("status = 'open'").Count(&openDisputes)
+	var totalBookings, totalDisputes, openDisputes int64
+	if err := s.db.Table("bookings").Count(&totalBookings).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to count bookings")
+	}
+	if err := s.db.Table("disputes").Count(&totalDisputes).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to count disputes")
+	}
+	if err := s.db.Table("disputes").Where("status = 'open'").Count(&openDisputes).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to count open disputes")
+	}
 
 	disputeRate := 0.0
 	if totalBookings > 0 {
@@ -358,44 +410,56 @@ func (s *Service) GetAIOpsStats() (map[string]interface{}, error) {
 	}
 
 	var avgDuration float64
-	s.db.Table("bookings").Select("COALESCE(AVG(rental_days), 0)").Scan(&avgDuration)
+	if err := s.db.Table("bookings").Select("COALESCE(AVG(rental_days), 0)").Scan(&avgDuration).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to avg rental duration")
+	}
 
 	var avgTrust float64
-	s.db.Table("users").Where("role = 'seller'").Select("COALESCE(AVG(trust_score), 100)").Scan(&avgTrust)
+	if err := s.db.Table("users").Where("role = 'seller'").Select("COALESCE(AVG(trust_score), 100)").Scan(&avgTrust).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to avg trust score")
+	}
 
 	type trendCat struct {
 		Category string `json:"category"`
 		Count    int64  `json:"count"`
 	}
 	var categories []trendCat
-	s.db.Table("bookings").
+	if err := s.db.Table("bookings").
 		Select("outfits.category, count(*) as count").
 		Joins("join outfits on outfits.id = bookings.outfit_id").
 		Group("outfits.category").
 		Order("count desc").
 		Limit(5).
-		Scan(&categories)
+		Scan(&categories).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to query category trends")
+	}
 
 	// AIOPS 2 - Support Trend Analysis
-	var openTickets int64
-	var resolvedTickets int64
-	s.db.Table("support_tickets").Where("status = 'open'").Count(&openTickets)
-	s.db.Table("support_tickets").Where("status = 'resolved' OR status = 'closed'").Count(&resolvedTickets)
+	var openTickets, resolvedTickets int64
+	if err := s.db.Table("support_tickets").Where("status = 'open'").Count(&openTickets).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to count open tickets")
+	}
+	if err := s.db.Table("support_tickets").Where("status = 'resolved' OR status = 'closed'").Count(&resolvedTickets).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to count resolved tickets")
+	}
 
 	// AIOPS 2 - Refund Anomaly Detection
-	var refundsCurrentWeek float64
-	var refundsPriorWeek float64
+	var refundsCurrentWeek, refundsPriorWeek float64
 	now := time.Now()
 	sevenDaysAgo := now.AddDate(0, 0, -7)
 	fourteenDaysAgo := now.AddDate(0, 0, -14)
 
-	s.db.Table("transactions").
+	if err := s.db.Table("transactions").
 		Where("type = 'rental_refund' AND created_at >= ?", sevenDaysAgo).
-		Select("COALESCE(SUM(amount), 0)").Scan(&refundsCurrentWeek)
+		Select("COALESCE(SUM(amount), 0)").Scan(&refundsCurrentWeek).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to sum current week refunds")
+	}
 
-	s.db.Table("transactions").
+	if err := s.db.Table("transactions").
 		Where("type = 'rental_refund' AND created_at >= ? AND created_at < ?", fourteenDaysAgo, sevenDaysAgo).
-		Select("COALESCE(SUM(amount), 0)").Scan(&refundsPriorWeek)
+		Select("COALESCE(SUM(amount), 0)").Scan(&refundsPriorWeek).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to sum prior week refunds")
+	}
 
 	refundIncreasePercent := 0.0
 	if refundsPriorWeek > 0 {
@@ -404,9 +468,10 @@ func (s *Service) GetAIOpsStats() (map[string]interface{}, error) {
 	refundAnomalyDetected := refundIncreasePercent > 15.0
 
 	// AIOPS 2 - Platform Health Score
-	// Out of 100, deducted based on active errors, disputes, and open support tickets.
 	var errorLogsLast24h int64
-	s.db.Table("system_logs").Where("level = 'error' AND created_at >= ?", now.Add(-24*time.Hour)).Count(&errorLogsLast24h)
+	if err := s.db.Table("system_logs").Where("level = 'error' AND created_at >= ?", now.Add(-24*time.Hour)).Count(&errorLogsLast24h).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to count error logs")
+	}
 
 	healthScore := 100.0 - (float64(openDisputes) * 5.0) - (float64(openTickets) * 2.0) - (float64(errorLogsLast24h) * 1.5)
 	if healthScore < 0 {
@@ -421,25 +486,27 @@ func (s *Service) GetAIOpsStats() (map[string]interface{}, error) {
 		Reason     string    `json:"reason"`
 	}
 	var riskySellers []riskSeller
-	// Query sellers with low trust score
-	s.db.Table("users").
+	if err := s.db.Table("users").
 		Select("id, name, trust_score, 'Low trust score' as reason").
 		Where("role = 'seller' AND trust_score < 80").
 		Limit(5).
-		Scan(&riskySellers)
+		Scan(&riskySellers).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to query risky sellers")
+	}
 
-	// Query sellers with high cancellation rate
 	type cancelStats struct {
 		SellerID uuid.UUID
 		Total    int64
 		Cancel   int64
 	}
 	var cStats []cancelStats
-	s.db.Table("bookings").
+	if err := s.db.Table("bookings").
 		Select("seller_id, count(*) as total, sum(case when status = 'cancelled' then 1 else 0 end) as cancel").
 		Group("seller_id").
 		Having("count(*) >= 3").
-		Scan(&cStats)
+		Scan(&cStats).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to query cancellation stats")
+	}
 	for _, cs := range cStats {
 		rate := float64(cs.Cancel) / float64(cs.Total)
 		if rate > 0.20 {
@@ -457,7 +524,9 @@ func (s *Service) GetAIOpsStats() (map[string]interface{}, error) {
 
 	// AIOPS 2 - Operational Insights
 	var avgRating float64
-	s.db.Table("reviews").Select("COALESCE(AVG(rating), 0)").Scan(&avgRating)
+	if err := s.db.Table("reviews").Select("COALESCE(AVG(rating), 0)").Scan(&avgRating).Error; err != nil {
+		log.Error().Err(err).Msg("GetAIOpsStats: failed to avg rating")
+	}
 
 	var insights []string
 	if len(categories) > 0 {

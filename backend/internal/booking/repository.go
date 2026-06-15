@@ -1,6 +1,7 @@
 package booking
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,23 @@ func NewRepository(db *gorm.DB) *Repository {
 
 func (r *Repository) Create(booking *Booking) error {
 	return r.db.Create(booking).Error
+}
+
+func (r *Repository) CreateIfAvailable(booking *Booking, outfitID uuid.UUID, pickupDate, returnDate time.Time) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var count int64
+		err := tx.Model(&Booking{}).
+			Where("outfit_id = ? AND status NOT IN ('cancelled')", outfitID).
+			Where("pickup_date <= ? AND return_date >= ?", returnDate, pickupDate).
+			Count(&count).Error
+		if err != nil {
+			return err
+		}
+		if count > 0 {
+			return errors.New("this outfit is already booked for the selected dates")
+		}
+		return tx.Create(booking).Error
+	})
 }
 
 func (r *Repository) FindByID(id uuid.UUID) (*Booking, error) {

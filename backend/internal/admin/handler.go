@@ -140,6 +140,14 @@ func (h *Handler) GetAIOps(c *fiber.Ctx) error {
 	return response.Success(c, "AIOps intelligence retrieved", stats)
 }
 
+func (h *Handler) BanUser(c *fiber.Ctx) error {
+	userID := c.Params("userId")
+	if err := h.service.BanUser(userID); err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+	return response.Success(c, "User ban status toggled successfully", nil)
+}
+
 func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handler, adminMiddleware fiber.Handler) {
 	admin := router.Group("/admin", authMiddleware, adminMiddleware)
 	admin.Get("/stats", h.GetStats)
@@ -152,4 +160,5 @@ func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handl
 	admin.Put("/outfits/:id/reject", h.RejectOutfit)
 	admin.Get("/disputes", h.GetDisputes)
 	admin.Put("/disputes/:id/resolve", h.ResolveDispute)
+	admin.Post("/users/:userId/ban", h.BanUser)
 }

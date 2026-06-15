@@ -8,11 +8,9 @@ import { SlidersHorizontal, X, Star, Search, RotateCcw, LayoutGrid } from 'lucid
 import { outfitsAPI } from '@/lib/api';
 import type { Outfit, OutfitCategory } from '@/types';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import { Z_INDEX } from '@/lib/constants';
-import { lockScroll, unlockScroll } from '@/lib/scroll-lock';
 
 const CATEGORY_OPTIONS: { label: string; value: OutfitCategory }[] = [
   { label: 'Lehenga', value: 'lehenga' },

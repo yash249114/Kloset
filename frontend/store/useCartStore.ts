@@ -192,6 +192,9 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'kloset-cart-storage',
+      onRehydrateStorage: () => (state) => {
+        if (state) state.isOpen = false;
+      },
     }
   )
 );

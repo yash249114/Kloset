@@ -13,7 +13,13 @@ import {
   Settings,
   ArrowLeft,
   LogOut,
-  FolderOpen
+  FolderOpen,
+  ShoppingCart,
+  CreditCard,
+  BarChart3,
+  MessageSquare,
+  Shield,
+  FileText
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -26,8 +32,14 @@ export default function AdminSidebar() {
     { label: 'Users', path: '/admin/users', icon: Users },
     { label: 'Sellers', path: '/admin/sellers', icon: ShieldCheck },
     { label: 'KYC Approval', path: '/admin/kyc', icon: FolderOpen },
+    { label: 'Listings', path: '/admin/listings', icon: FileText },
+    { label: 'Orders', path: '/admin/orders', icon: ShoppingCart },
+    { label: 'Payments', path: '/admin/payments', icon: CreditCard },
     { label: 'Transactions', path: '/admin/transactions', icon: Receipt },
+    { label: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
     { label: 'Disputes', path: '/admin/disputes', icon: AlertOctagon },
+    { label: 'Support', path: '/admin/support', icon: MessageSquare },
+    { label: 'Security', path: '/admin/security', icon: Shield },
     { label: 'AIOps Monitor', path: '/admin/aiops', icon: Sparkles },
     { label: 'Settings', path: '/admin/settings', icon: Settings },
   ];

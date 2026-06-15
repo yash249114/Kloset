@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
 import { uploadImage, validateImageFile } from '@/lib/cloudinary';
 import { toast } from 'sonner';
 
@@ -57,7 +57,7 @@ export default function ImageUploader({
 
         onChange([...images, newImage]);
         toast.success(`${file.name} uploaded successfully.`);
-      } catch (err) {
+      } catch {
         toast.error(`Failed to upload ${file.name}.`);
       } finally {
         setUploading((prev) => {

@@ -28,7 +28,7 @@ export default function AdminAnalyticsPage() {
     } catch {
       toast.error('Failed to load analytics data.');
     } finally {
-      if (!silent) setLoading(false);
+      setLoading(false);
     }
   };
 

@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Lock,
   MapPin,
-  Mail,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUIStore } from '@/store/useUIStore';

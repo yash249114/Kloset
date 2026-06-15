@@ -426,6 +426,7 @@ export interface AIOpsResponse {
 }
 
 export interface AdminLogEntry {
+  id?: string;
   timestamp: string;
   level: string;
   message: string;

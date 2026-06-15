@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit2, Trash2, CheckCircle, RefreshCcw, Image as ImageIcon, Send } from 'lucide-react';
+import { Plus, Edit2, Trash2, Image as ImageIcon, Send } from 'lucide-react';
 import { outfitsAPI } from '@/lib/api';
 import type { Outfit, OutfitCategory } from '@/types';
 import { toast } from 'sonner';

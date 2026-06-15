@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Send, RotateCcw, User, Bot } from 'lucide-react';
+import { Send, RotateCcw, User, Bot } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import Drawer from '@/components/ui/Drawer';
 import client from '@/lib/api';

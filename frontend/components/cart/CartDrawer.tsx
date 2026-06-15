@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { ShoppingBag, Trash2, Calendar, Tag, Percent, ArrowRight } from 'lucide-react';
 import { useCartStore, calculateRentalDays } from '@/store/useCartStore';
 import { useUIStore } from '@/store/useUIStore';
 import Drawer from '@/components/ui/Drawer';
-import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { Z_INDEX } from '@/lib/constants';
 

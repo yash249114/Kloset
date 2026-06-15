@@ -35,6 +35,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "impeccable": "^2.3.2",
+    "lighthouse": "^12.8.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

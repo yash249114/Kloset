@@ -4,14 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Inbox, ChevronRight, Truck } from 'lucide-react';
+import { Calendar, Inbox, ChevronRight, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { bookingsAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { Booking } from '@/types';
-import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
 
 const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
@@ -20,14 +18,6 @@ export default function DashboardOrdersPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login?redirect=/dashboard/orders');
-      return;
-    }
-    loadBookings();
-  }, [isAuthenticated, authLoading]);
 
   const loadBookings = async () => {
     setLoading(true);
@@ -40,6 +30,14 @@ export default function DashboardOrdersPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/auth/login?redirect=/dashboard/orders');
+      return;
+    }
+    loadBookings();
+  }, [isAuthenticated, authLoading]);
 
   const getStatusColor = (status: string) => {
     const map: Record<string, string> = {

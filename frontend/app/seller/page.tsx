@@ -3,14 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Plus, ShoppingBag, DollarSign, Star, Calendar, RefreshCcw, LayoutGrid } from 'lucide-react';
+import { Plus, DollarSign, Star, Calendar, RefreshCcw, LayoutGrid } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { outfitsAPI, bookingsAPI } from '@/lib/api';
-import type { Outfit, Booking } from '@/types';
-import { toast } from 'sonner';
+import type { Booking } from '@/types';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-import Skeleton from '@/components/ui/Skeleton';
 
 export default function SellerDashboardPage() {
   const { user } = useAuthStore();

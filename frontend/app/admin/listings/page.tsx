@@ -23,7 +23,7 @@ export default function AdminListingsPage() {
     } catch {
       toast.error('Failed to load listings.');
     } finally {
-      if (!silent) setLoading(false);
+      setLoading(false);
     }
   };
 

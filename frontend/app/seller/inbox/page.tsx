@@ -39,12 +39,31 @@ export default function SellerInboxPage() {
   };
 
   useEffect(() => {
-    loadConversations();
+    const init = async () => {
+      setLoading(true);
+      try {
+        const convs = await messagingAPI.getConversations();
+        setConversations(convs);
+      } catch {
+        setConversations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
     if (activeChat) {
-      loadMessages(activeChat);
+      const init = async () => {
+        try {
+          const msgs = await messagingAPI.getMessages(activeChat);
+          setMessages(msgs);
+        } catch {
+          setMessages([]);
+        }
+      };
+      init();
     } else {
       setMessages([]);
     }

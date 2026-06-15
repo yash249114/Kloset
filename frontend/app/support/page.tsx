@@ -23,22 +23,12 @@ const STATUS_MAP: Record<string, { label: string; variant: 'gold' | 'sage' | 'ro
 
 export default function SupportPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuthStore();
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Array<{ id: string; subject: string; description: string; status: string; created_at: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      loadPublicFaq();
-      return;
-    }
-    if (isAuthenticated) {
-      loadTickets();
-    }
-  }, [isAuthenticated, authLoading]);
 
   const loadTickets = async () => {
     setLoading(true);
@@ -55,6 +45,16 @@ export default function SupportPage() {
   const loadPublicFaq = () => {
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      loadPublicFaq();
+      return;
+    }
+    if (isAuthenticated) {
+      loadTickets();
+    }
+  }, [isAuthenticated, authLoading]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();

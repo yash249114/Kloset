@@ -7,7 +7,6 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Calendar, MapPin, ArrowRight, Sparkles } from 'lucide-react';
 import { bookingsAPI } from '@/lib/api';
 import type { Booking } from '@/types';
-import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { toast } from 'sonner';
 
@@ -21,15 +20,6 @@ function ConfirmationContent() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!bookingId) {
-      toast.error('No booking reference found.');
-      router.push('/discover');
-      return;
-    }
-    loadBooking();
-  }, [bookingId]);
-
   const loadBooking = async () => {
     setLoading(true);
     try {
@@ -41,6 +31,15 @@ function ConfirmationContent() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!bookingId) {
+      toast.error('No booking reference found.');
+      router.push('/discover');
+      return;
+    }
+    loadBooking();
+  }, [bookingId]);
 
   if (loading) {
     return (

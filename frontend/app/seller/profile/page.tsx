@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, MapPin, ShieldCheck, Star, Mail, Phone, Save } from 'lucide-react';
+import { User, ShieldCheck, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/useAuthStore';
 import { userAPI } from '@/lib/api';
@@ -24,14 +24,18 @@ export default function SellerProfilePage() {
 
   useEffect(() => {
     if (user) {
-      setProfile({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        business_name: user.business_name || '',
-        business_address: user.business_address || '',
-        business_description: user.business_description || '',
-      });
+      const sync = async () => {
+        await Promise.resolve();
+        setProfile({
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          business_name: user.business_name || '',
+          business_address: user.business_address || '',
+          business_description: user.business_description || '',
+        });
+      };
+      sync();
     }
   }, [user]);
 
