@@ -9,12 +9,12 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useAuthStore } from '@/store/useAuthStore';
-import { bookingsAPI, bankAPI, upiAPI } from '@/lib/api';
+import { bookingsAPI, bankAPI, upiAPI, userAPI } from '@/lib/api';
 import type { Booking, BankAccount, UPIID } from '@/types';
 import { toast } from 'sonner';
 
 export default function SellerEarningsPage() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [earningsList, setEarningsList] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [withdrawing, setWithdrawing] = useState(false);
@@ -77,6 +77,14 @@ export default function SellerEarningsPage() {
       const { sellerPayoutAPI } = await import('@/lib/api');
       await sellerPayoutAPI.withdraw(totalBalance);
       toast.success('Payout withdrawal initiated! Transfer will credit in 2-3 business days.');
+      
+      // Refresh user profile to get updated wallet balance
+      try {
+        const updatedUser = await userAPI.getProfile();
+        setUser(updatedUser);
+      } catch (refreshError) {
+        console.warn('Failed to refresh user profile:', refreshError);
+      }
     } catch {
       toast.error('Failed to initiate withdrawal. Please try again or contact support.');
     } finally {

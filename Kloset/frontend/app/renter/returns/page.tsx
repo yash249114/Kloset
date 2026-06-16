@@ -128,10 +128,14 @@ export default function ReturnsPage() {
       router.push('/auth/login?redirect=/renter/returns');
       return;
     }
-    if (isAuthenticated) {
-      loadData();
-    }
   }, [isAuthenticated, authLoading]);
+
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      const load = async () => { await loadData(); };
+      load();
+    }
+  }, [isAuthenticated, loading]);
 
   const loadCompletedBookings = async () => {
     try {

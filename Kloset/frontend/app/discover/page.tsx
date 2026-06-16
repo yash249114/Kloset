@@ -94,7 +94,8 @@ function DiscoverContent() {
   }, [searchQuery, category, city, sortBy, selectedSizes, priceRange, selectedOccasions]);
 
   useEffect(() => {
-    fetchOutfits();
+    const fetch = async () => { await fetchOutfits(); };
+    fetch();
   }, [fetchOutfits]);
 
   const updateURLParams = useCallback(() => {

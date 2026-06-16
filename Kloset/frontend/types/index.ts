@@ -95,6 +95,7 @@ export interface Outfit {
   accessories_included: string[];
   city: string | null;
   state: string | null;
+  pincode: string | null;
   price_1day: number | null;
   price_3day: number | null;
   price_7day: number | null;

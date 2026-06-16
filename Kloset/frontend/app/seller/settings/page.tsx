@@ -42,7 +42,9 @@ export default function SellerSettingsPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const validateUPI = (upi: string): string | null => {
     if (!upi.trim()) return 'UPI ID is required';

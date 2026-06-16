@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, RefreshCcw, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { adminAPI } from '@/lib/api';
@@ -27,9 +27,14 @@ export default function AdminSecurityPage() {
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
-  const recentLogCount = logs.filter(l => new Date(l.timestamp) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length;
-  const errorCount = logs.filter(l => l.level === 'error').length;
-  const last24hCount = logs.filter(l => new Date(l.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000)).length;
+  const { recentLogCount, errorCount, last24hCount } = useMemo(() => {
+    const now = Date.now();
+    return {
+      recentLogCount: logs.filter(l => new Date(l.timestamp) > new Date(now - 30 * 24 * 60 * 60 * 1000)).length,
+      errorCount: logs.filter(l => l.level === 'error').length,
+      last24hCount: logs.filter(l => new Date(l.timestamp) > new Date(now - 24 * 60 * 60 * 1000)).length,
+    };
+  }, [logs]);
 
   return (
     <motion.div

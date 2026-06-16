@@ -102,7 +102,8 @@ export default function RenterOrdersPage() {
       return;
     }
 
-    loadOrders();
+    const load = async () => { await loadOrders(); };
+    load();
   }, [isAuthenticated, authLoading]);
 
   const handleUpdateStatus = async (bookingId: string, nextStatus: BookingStatus) => {

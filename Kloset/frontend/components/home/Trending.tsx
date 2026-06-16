@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import type { Outfit } from '@/types';
@@ -54,10 +55,12 @@ export default function Trending({ outfits }: TrendingProps) {
             >
               <Link href={`/outfit/${item.id}`} className="block group">
                 <div className="relative h-[380px] overflow-hidden rounded-2xl bg-ivory-dark">
-                  <img
+                  <Image
                     src={imgUrl}
                     alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-charcoal/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   {idx === 0 && (

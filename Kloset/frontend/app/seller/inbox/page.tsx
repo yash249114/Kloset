@@ -39,23 +39,25 @@ export default function SellerInboxPage() {
   };
 
   useEffect(() => {
-    loadConversations();
+    const init = async () => { await loadConversations(); };
+    init();
   }, []);
 
   useEffect(() => {
-    if (activeChat) {
-      const init = async () => {
-        try {
-          const msgs = await messagingAPI.getMessages(activeChat);
-          setMessages(msgs);
-        } catch {
-          setMessages([]);
-        }
-      };
-      init();
-    } else {
+    if (!activeChat) {
       setMessages([]);
+      return;
     }
+
+    const init = async () => {
+      try {
+        const msgs = await messagingAPI.getMessages(activeChat);
+        setMessages(msgs);
+      } catch {
+        setMessages([]);
+      }
+    };
+    init();
   }, [activeChat]);
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };

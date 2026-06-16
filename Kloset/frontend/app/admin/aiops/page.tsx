@@ -210,8 +210,7 @@ export default function AdminAIOpsPage() {
                           <span className="text-[8px] font-mono text-champagne">{alert.metric}</span>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    ))
                   ) : (
                     <div className="py-8 text-center text-[#8C8C8C]">No active alerts - all systems nominal</div>
                   )}

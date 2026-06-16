@@ -47,10 +47,13 @@ export default function SupportPage() {
       setLoading(false);
       return;
     }
-    if (isAuthenticated) {
+  }, [isAuthenticated, authLoading]);
+
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
       loadTickets();
     }
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, loading]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();

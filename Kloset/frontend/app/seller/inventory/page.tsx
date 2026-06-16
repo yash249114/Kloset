@@ -42,7 +42,9 @@ export default function SellerInventoryPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleUpdateQuantity = async (outfitId: string) => {
     if (editQuantity < 0) { toast.error('Quantity cannot be negative.'); return; }

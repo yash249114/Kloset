@@ -40,7 +40,9 @@ export default function TicketDetailPage() {
     }
   };
 
-  useEffect(() => { loadTicket(); }, [ticketId]);
+  useEffect(() => {
+    loadTicket();
+  }, [ticketId]);
 
 const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PlusCircle, ShoppingBag, BarChart3, Wallet, ArrowLeft, LogOut } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, ShoppingBag, BarChart3, Wallet, ArrowLeft, LogOut, Package, Settings, MessageSquare, Star, LifeBuoy, User } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function SellerSidebar() {
@@ -13,9 +13,15 @@ export default function SellerSidebar() {
   const menuItems = [
     { label: 'Overview', path: '/seller', icon: LayoutDashboard },
     { label: 'My Listings', path: '/seller/listings', icon: PlusCircle },
+    { label: 'Inventory', path: '/seller/inventory', icon: Package },
     { label: 'Rental Orders', path: '/seller/orders', icon: ShoppingBag },
     { label: 'Analytics', path: '/seller/analytics', icon: BarChart3 },
     { label: 'Earnings & Payouts', path: '/seller/earnings', icon: Wallet },
+    { label: 'Reviews', path: '/seller/reviews', icon: Star },
+    { label: 'Inbox', path: '/seller/inbox', icon: MessageSquare },
+    { label: 'Support', path: '/seller/support', icon: LifeBuoy },
+    { label: 'Profile', path: '/seller/profile', icon: User },
+    { label: 'Payout Settings', path: '/seller/settings', icon: Settings },
   ];
 
   return (

@@ -40,9 +40,12 @@ export default function OutfitDetailPage() {
 
   useEffect(() => {
     if (!startDate) return;
-    const end = new Date(startDate);
-    end.setDate(end.getDate() + rentalDays);
-    setEndDate(end.toISOString().substring(0, 10));
+    const computeEnd = () => {
+      const end = new Date(startDate);
+      end.setDate(end.getDate() + rentalDays);
+      setEndDate(end.toISOString().substring(0, 10));
+    };
+    computeEnd();
   }, [rentalDays, startDate]);
 
   useEffect(() => {

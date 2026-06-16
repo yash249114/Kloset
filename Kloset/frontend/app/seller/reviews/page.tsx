@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Star, MessageSquare } from 'lucide-react';
 import { reviewsAPI } from '@/lib/api';
@@ -10,7 +10,22 @@ import Card from '@/components/ui/Card';
 export default function SellerReviewsPage() {
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ratingSummary, setRatingSummary] = useState<{ avg: number; total: number; breakdown: Record<number, number> }>({ avg: 4.8, total: 24, breakdown: { 5: 18, 4: 4, 3: 2, 2: 0, 1: 0 } });
+
+  const ratingSummary = useMemo(() => {
+    if (reviews.length === 0) {
+      return { avg: 0, total: 0, breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } };
+    }
+    const total = reviews.length;
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    const avg = Math.round((sum / total) * 10) / 10;
+    const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach((r) => {
+      if (r.rating >= 1 && r.rating <= 5) {
+        breakdown[r.rating as keyof typeof breakdown]++;
+      }
+    });
+    return { avg, total, breakdown };
+  }, [reviews]);
 
   useEffect(() => {
     const load = async () => {
