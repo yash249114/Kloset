@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { User, Mail, Lock, Phone, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
+import { User, Mail, Lock, Phone, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { CredentialResponse } from '@react-oauth/google';
 import { isAxiosError } from 'axios';

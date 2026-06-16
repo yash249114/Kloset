@@ -72,7 +72,7 @@ export default function Hero() {
             </Link>
             <button
               onClick={() => setAIStylistOpen(true)}
-              className="btn px-8 h-[56px] text-sm gap-2 border border-warm-white/20 text-warm-white hover:bg-warm-white/10 cursor-pointer"
+              className="btn btn-ghost px-8 h-[56px] text-sm gap-2 border border-warm-white/20 text-warm-white hover:bg-warm-white/10 cursor-pointer"
             >
               <Sparkles size={16} />
               AI Stylist

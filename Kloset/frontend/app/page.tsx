@@ -86,7 +86,7 @@ export default function Homepage() {
   }, []);
 
   return (
-    <div className="bg-ivory text-charcoal min-h-screen pt-[72px]">
+    <div className="bg-ivory text-charcoal min-h-screen pt-[64px]">
       <div className="grain-overlay" />
 
       <Hero />

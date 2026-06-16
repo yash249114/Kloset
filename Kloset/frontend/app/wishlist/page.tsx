@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ShoppingCart, Trash2, ChevronRight, Inbox, Eye } from 'lucide-react';
+import { Heart, ShoppingCart, Trash2, ChevronRight, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWishlistStore } from '@/store/useWishlistStore';
 import { useCartStore } from '@/store/useCartStore';

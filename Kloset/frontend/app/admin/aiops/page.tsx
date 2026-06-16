@@ -63,6 +63,10 @@ function StatusDot({ status }: { status: string }) {
 
 export default function AdminAIOpsPage() {
   const [data, setData] = useState<AIOpsData | null>(null);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [incidents, setIncidents] = useState<any[]>([]);
+  const [systemHealth, setSystemHealth] = useState<any>(null);
+  const [revenue, setRevenue] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pulse, setPulse] = useState(true);
 
@@ -70,8 +74,18 @@ export default function AdminAIOpsPage() {
     if (!silent) setLoading(true);
     setPulse(true);
     try {
-      const resp = await adminAPI.getAIOps();
+      const [resp, alertsData, incidentsData, systemHealthData, revenueData] = await Promise.all([
+        adminAPI.getAIOps(),
+        fetch('/api/aiops?type=alerts').then(res => res.json()),
+        fetch('/api/aiops?type=incidents').then(res => res.json()),
+        fetch('/api/aiops?type=system-health').then(res => res.json()),
+        fetch('/api/aiops?type=revenue').then(res => res.json()),
+      ]);
       setData(resp);
+      setAlerts(alertsData);
+      setIncidents(incidentsData);
+      setSystemHealth(systemHealthData);
+      setRevenue(revenueData);
     } catch {
       toast.error('Failed to load AIOps data.');
     } finally {

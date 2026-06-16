@@ -40,7 +40,7 @@ const FEATURES = [
 
 export default function Trust() {
   return (
-    <section className="section-pad bg-white relative overflow-hidden">
+    <section className="section-pad bg-ivory relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-champagne/20 to-transparent" />
       <div className="max-w-[1440px] mx-auto px-6">
         <motion.div

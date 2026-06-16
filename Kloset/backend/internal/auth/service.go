@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -43,7 +42,7 @@ func NewService(repo *Repository, cfg *config.Config, notifSvc *notification.Ser
 }
 
 // Register creates a new user account (unverified) and sends email OTP
-func (s *Service) Register(req *RegisterRequest) (*UserResponse, error) {
+func (s *Service) Register(req *RegisterRequest, ip string) (*UserResponse, error) {
 	existing, err := s.repo.FindByEmail(req.Email)
 	if err != nil {
 		return nil, err
@@ -84,7 +83,7 @@ func (s *Service) Register(req *RegisterRequest) (*UserResponse, error) {
 	}
 
 	if s.logSvc != nil {
-		s.logSvc.LogEvent(req.Email, "User registered with role: "+req.Role+" (unverified, OTP sent)", "127.0.0.1", "info")
+		s.logSvc.LogEvent(req.Email, "User registered with role: "+req.Role+" (unverified, OTP sent)", ip, "info")
 	}
 
 	resp := user.ToUserResponse()
@@ -253,48 +252,32 @@ func (s *Service) generateAccessToken(user *User) (string, error) {
 // GoogleLogin authenticates a Google user, linking or creating the user
 func (s *Service) GoogleLogin(req *GoogleLoginRequest) (*AuthResponse, error) {
 	var email, name string
-	var googleVerified bool
 
-	// Check for mock token under non-production environments
-	if s.config.App.Env != "production" && strings.HasPrefix(req.Credential, "mock_google_") {
-		email = "renter.google.e2e@kloset.in"
-		name = "E2E Google User"
-		googleVerified = true
-	} else {
-		// Production-grade cryptographic verification
-		expectedAud := getEnvVar("GOOGLE_CLIENT_ID", "")
-		if expectedAud == "" {
-			return nil, errors.New("server is missing GOOGLE_CLIENT_ID configuration")
-		}
-
-		payload, err := idtoken.Validate(context.Background(), req.Credential, expectedAud)
-		if err != nil {
-			return nil, fmt.Errorf("failed to verify Google token signature: %w", err)
-		}
-
-		// Verify issuer claim strictly
-		if payload.Issuer != "https://accounts.google.com" && payload.Issuer != "accounts.google.com" {
-			return nil, errors.New("invalid Google token issuer")
-		}
-
-		// Verify email_verified is true
-		emailVerifiedClaim, exists := payload.Claims["email_verified"]
-		if !exists {
-			return nil, errors.New("google token is missing email_verified claim")
-		}
-		emailVer, ok := emailVerifiedClaim.(bool)
-		if !ok || !emailVer {
-			return nil, errors.New("email is not verified by Google")
-		}
-
-		email = payload.Claims["email"].(string)
-		name, _ = payload.Claims["name"].(string)
-		googleVerified = true
+	expectedAud := getEnvVar("GOOGLE_CLIENT_ID", "")
+	if expectedAud == "" {
+		return nil, errors.New("server is missing GOOGLE_CLIENT_ID configuration")
 	}
 
-	if !googleVerified || email == "" {
-		return nil, errors.New("failed to verify google identity")
+	payload, err := idtoken.Validate(context.Background(), req.Credential, expectedAud)
+	if err != nil {
+		return nil, fmt.Errorf("failed to verify Google token signature: %w", err)
 	}
+
+	if payload.Issuer != "https://accounts.google.com" && payload.Issuer != "accounts.google.com" {
+		return nil, errors.New("invalid Google token issuer")
+	}
+
+	emailVerifiedClaim, exists := payload.Claims["email_verified"]
+	if !exists {
+		return nil, errors.New("google token is missing email_verified claim")
+	}
+	emailVer, ok := emailVerifiedClaim.(bool)
+	if !ok || !emailVer {
+		return nil, errors.New("email is not verified by Google")
+	}
+
+	email = payload.Claims["email"].(string)
+	name, _ = payload.Claims["name"].(string)
 
 	// Retrieve or create user record
 	user, err := s.repo.FindByEmail(email)
@@ -309,8 +292,7 @@ func (s *Service) GoogleLogin(req *GoogleLoginRequest) (*AuthResponse, error) {
 			userRole = "seller"
 		}
 
-		phoneHash, _ := rand.Int(rand.Reader, big.NewInt(9000000000))
-		mockPhone := "+91" + fmt.Sprintf("%d", phoneHash.Int64()+1000000000)
+		mockPhone := "+9100000000000"
 		
 		hashedPass, _ := utils.HashPassword(uuid.New().String()) // Random password
 		user = &User{

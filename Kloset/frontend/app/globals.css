@@ -21,7 +21,7 @@
   --color-admin-border: #2A2A2A;
 
   --font-display: "Playfair Display";
-  --font-sans: "Inter";
+  --font-sans: "DM Sans";
 }
 
 :root {
@@ -189,7 +189,7 @@ h1, h2, h3, h4, h5, h6 {
 .grain-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 50;
   pointer-events: none;
   opacity: 0.02;
   mix-blend-mode: multiply;

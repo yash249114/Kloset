@@ -153,7 +153,7 @@ export default function RenterOrdersPage() {
         reason: disputeReason.trim(),
         description: disputeDesc.trim(),
       });
-      toast.error('Dispute ticket raised. Escrow funds locked.');
+      toast.success('Dispute ticket raised. Escrow funds locked.');
       setSelectedBookingForDispute(null);
       setDisputeReason('');
       setDisputeDesc('');

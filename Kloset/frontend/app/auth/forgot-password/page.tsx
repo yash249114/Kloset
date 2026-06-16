@@ -4,7 +4,7 @@ import React, { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Mail, ArrowRight, Sparkles, Lock, ChevronLeft } from 'lucide-react';
+import { Mail, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAxiosError } from 'axios';
 import { authAPI } from '@/lib/api';

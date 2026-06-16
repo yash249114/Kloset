@@ -75,13 +75,13 @@ export default function SellerCTA() {
             </div>
 
             <div className="hidden lg:block relative">
-              <div className="aspect-[4/5] rounded-2xl overflow-hidden">
+              <div className="aspect-[4/5] rounded-2xl overflow-hidden relative">
                 <img
                   src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=85"
                   alt="Seller"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-l from-charcoal/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/40 to-transparent" />
               </div>
             </div>
           </motion.div>

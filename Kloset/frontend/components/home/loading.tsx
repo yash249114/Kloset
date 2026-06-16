@@ -40,7 +40,7 @@ export function TrendingSkeleton() {
 
 export function CategoriesSkeleton() {
   return (
-    <div className="section-pad bg-white">
+    <div className="section-pad bg-ivory">
       <div className="max-w-[1440px] mx-auto px-6">
         <div className="mb-10 space-y-3">
           <Shimmer className="h-3 w-36" />

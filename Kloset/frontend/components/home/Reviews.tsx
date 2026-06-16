@@ -48,7 +48,7 @@ export default function Reviews({ reviews }: ReviewsProps) {
                 key={rev.id}
                 variants={fadeUp}
                 transition={{ ...easeConfig, delay: idx * 0.12 }}
-                className="bg-white rounded-2xl p-6 border border-border/40 transition-all duration-500 hover:translate-y-[-4px] hover:shadow-xl hover:border-champagne/20"
+                className="bg-white rounded-2xl p-6 border border-border/40 hover-lift"
               >
                 <div className="flex gap-0.5 mb-4">
                   {[...Array(rev.stars)].map((_, i) => (

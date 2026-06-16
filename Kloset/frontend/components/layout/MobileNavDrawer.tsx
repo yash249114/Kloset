@@ -18,6 +18,7 @@ import {
   LayoutDashboard,
   History,
 } from 'lucide-react';
+import { KlosetMonogram, KlosetWordmark } from '@/components/brand/KlosetLogo';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCartStore } from '@/store/useCartStore';
 import { useUIStore } from '@/store/useUIStore';
@@ -86,8 +87,9 @@ export default function MobileNavDrawer({ isOpen, onClose }: MobileNavDrawerProp
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 h-16 border-b border-border bg-white flex-shrink-0">
-              <Link href="/" onClick={onClose} className="font-display text-lg font-bold tracking-widest text-charcoal">
-                KLOSET
+              <Link href="/" onClick={onClose} className="flex items-center gap-2">
+                <KlosetMonogram size={22} className="text-champagne flex-shrink-0" />
+                <KlosetWordmark className="h-3.5 w-auto text-charcoal" />
               </Link>
               <button
                 onClick={onClose}

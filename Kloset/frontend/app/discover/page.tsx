@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SlidersHorizontal, X, Star, Search, RotateCcw, LayoutGrid, Sparkles, Filter, ChevronDown, Grid3X3, List } from 'lucide-react';
+import { SlidersHorizontal, X, Star, Search, RotateCcw, LayoutGrid, Sparkles, Filter, ChevronDown } from 'lucide-react';
 import { outfitsAPI } from '@/lib/api';
 import type { Outfit, OutfitCategory } from '@/types';
 import Button from '@/components/ui/Button';

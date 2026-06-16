@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Star, Calendar, MapPin, ShieldCheck, ChevronLeft, Heart, ShoppingBag, Sparkles, Check, MessageSquare, Truck, Shield, RotateCcw, Clock, User, Award } from 'lucide-react';
+import { Star, Calendar, MapPin, ShieldCheck, ChevronLeft, Heart, ShoppingBag, Sparkles, Check, MessageSquare, Truck, Shield, RotateCcw, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import { outfitsAPI, reviewsAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -37,6 +37,13 @@ export default function OutfitDetailPage() {
   const [recommendations, setRecommendations] = useState<Outfit[]>([]);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!startDate) return;
+    const end = new Date(startDate);
+    end.setDate(end.getDate() + rentalDays);
+    setEndDate(end.toISOString().substring(0, 10));
+  }, [rentalDays, startDate]);
 
   useEffect(() => {
     const fetchOutfit = async () => {
