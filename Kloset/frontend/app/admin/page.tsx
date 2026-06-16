@@ -11,18 +11,21 @@ import { toast } from 'sonner';
 
 const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
-const mockAlerts = [
-  { id: '1', level: 'critical', message: 'KYC queue: 12 seller applications pending verification', time: '10m ago' },
-  { id: '2', level: 'warning', message: 'Dispute #DSP-2024-089 exceeding 48hr resolution SLA', time: '25m ago' },
-  { id: '3', level: 'info', message: 'New seller onboarding: 3 applications submitted today', time: '1h ago' },
-  { id: '4', level: 'warning', message: 'Booking #BK-4532 pickup overdue by 2 hours', time: '2h ago' },
-];
+interface AdminAlert {
+  id: string;
+  level: 'critical' | 'warning' | 'info';
+  message: string;
+  time: string;
+}
 
-const mockIncidents = [
-  { id: '1', status: 'resolved', agent: 'Stylist-3', event: 'High latency spike', time: '15m ago', detail: 'Resolved via auto-scale' },
-  { id: '2', status: 'investigating', agent: 'Recommend-1', event: 'Recommendation timeout', time: '45m ago', detail: 'Under investigation' },
-  { id: '3', status: 'monitoring', agent: 'Search-2', event: 'Cache miss ratio > 5%', time: '2h ago', detail: 'Monitoring' },
-];
+interface AdminIncident {
+  id: string;
+  status: 'resolved' | 'investigating' | 'monitoring';
+  agent: string;
+  event: string;
+  time: string;
+  detail: string;
+}
 
 function AlertBadge({ level }: { level: string }) {
   const colors = {
@@ -82,17 +85,23 @@ function ExecutiveCard({ label, val, desc, icon: Icon, trend, index }: { label: 
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+  const [alerts, setAlerts] = useState<AdminAlert[]>([]);
+  const [incidents, setIncidents] = useState<AdminIncident[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadStats = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [statsResp, revenueResp] = await Promise.all([
+      const [statsResp, revenueResp, alertsResp, incidentsResp] = await Promise.all([
         adminAPI.getStats(),
         adminAPI.getRevenueData(),
+        fetch('/api/admin/monitoring/alerts').then(r => r.json()),
+        fetch('/api/admin/monitoring/incidents').then(r => r.json()),
       ]);
       setStats(statsResp);
       setRevenueData(revenueResp);
+      setAlerts(alertsResp.data || alertsResp || []);
+      setIncidents(incidentsResp.data || incidentsResp || []);
     } catch {
       toast.error('Failed to load dashboard data.');
     } finally {
@@ -197,21 +206,27 @@ export default function AdminOverviewPage() {
                   <AlertTriangle size={14} className="text-[#C9A96E]" /> Alert Prioritization
                 </h3>
                 <div className="space-y-2">
-                  {mockAlerts.map((alert, idx) => (
-                    <motion.div
-                      key={alert.id}
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ ...springTransition, delay: 0.2 + idx * 0.05 }}
-                      className="flex items-start gap-3 p-3 rounded-xl border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] hover:border-[#C9A96E]/20 transition-all duration-300"
-                    >
-                      <AlertBadge level={alert.level} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-[#E8E8E8] leading-relaxed">{alert.message}</p>
-                        <span className="text-[9px] font-mono text-[#8C8C8C] mt-1 block">{alert.time}</span>
-                      </div>
-                    </motion.div>
-                  ))}
+                  {alerts.length > 0 ? (
+                    alerts.map((alert, idx) => (
+                      <motion.div
+                        key={alert.id}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ ...springTransition, delay: 0.2 + idx * 0.05 }}
+                        className="flex items-start gap-3 p-3 rounded-xl border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] hover:border-[#C9A96E]/20 transition-all duration-300"
+                      >
+                        <AlertBadge level={alert.level} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] text-[#E8E8E8] leading-relaxed">{alert.message}</p>
+                          <span className="text-[9px] font-mono text-[#8C8C8C] mt-1 block">{alert.time}</span>
+                        </div>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center text-[#8C8C8C]">
+                      No active alerts - all systems nominal
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -220,25 +235,31 @@ export default function AdminOverviewPage() {
                   <Activity size={14} className="text-[#C9A96E]" /> Incident Feed
                 </h3>
                 <div className="space-y-2">
-                  {mockIncidents.map((inc, idx) => (
-                    <motion.div
-                      key={inc.id}
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ ...springTransition, delay: 0.3 + idx * 0.05 }}
-                      className="flex items-start gap-3 p-3 rounded-xl border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] hover:border-[#C9A96E]/20 transition-all duration-300"
-                    >
-                      <IncidentDot status={inc.status} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[11px] font-bold text-[#E8E8E8]">{inc.agent}</span>
-                          <span className="text-[8px] font-mono text-[#8C8C8C] uppercase bg-[#2A2A2A] px-1.5 py-0.5 rounded">{inc.status}</span>
+                  {incidents.length > 0 ? (
+                    incidents.map((inc, idx) => (
+                      <motion.div
+                        key={inc.id}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ ...springTransition, delay: 0.3 + idx * 0.05 }}
+                        className="flex items-start gap-3 p-3 rounded-xl border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] hover:border-[#C9A96E]/20 transition-all duration-300"
+                      >
+                        <IncidentDot status={inc.status} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[11px] font-bold text-[#E8E8E8]">{inc.agent}</span>
+                            <span className="text-[8px] font-mono text-[#8C8C8C] uppercase bg-[#2A2A2A] px-1.5 py-0.5 rounded">{inc.status}</span>
+                          </div>
+                          <p className="text-[11px] text-[#E8E8E8]">{inc.event}</p>
+                          <span className="text-[9px] font-mono text-[#8C8C8C] mt-1 block">{inc.time} &middot; {inc.detail}</span>
                         </div>
-                        <p className="text-[11px] text-[#E8E8E8]">{inc.event}</p>
-                        <span className="text-[9px] font-mono text-[#8C8C8C] mt-1 block">{inc.time} &middot; {inc.detail}</span>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center text-[#8C8C8C]">
+                      No active incidents - all systems operational
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

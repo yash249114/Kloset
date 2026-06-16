@@ -27,6 +27,10 @@ export default function AdminSecurityPage() {
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
+  const recentLogCount = logs.filter(l => new Date(l.timestamp) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length;
+  const errorCount = logs.filter(l => l.level === 'error').length;
+  const last24hCount = logs.filter(l => new Date(l.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000)).length;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -48,9 +52,9 @@ export default function AdminSecurityPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'Security Events', val: '12', desc: 'Last 30 days', icon: Shield },
-          { label: 'Open Alerts', val: '2', desc: 'Requires attention', icon: AlertTriangle },
-          { label: 'API Requests (24h)', val: '1,847', desc: 'From 42 unique IPs', icon: Clock },
+          { label: 'Security Events', val: recentLogCount.toString(), desc: 'Last 30 days', icon: Shield },
+          { label: 'Error Alerts', val: errorCount.toString(), desc: 'Requires attention', icon: AlertTriangle },
+          { label: 'API Requests (24h)', val: last24hCount.toString(), desc: 'From system logs', icon: Clock },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ...springTransition, delay: i * 0.05 }}>
             <Card padding="sm" theme="admin" className="flex flex-col justify-between h-24">

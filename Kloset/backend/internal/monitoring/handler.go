@@ -233,16 +233,7 @@ func (h *Handler) GetIncidents(c *fiber.Ctx) error {
 		}
 	}
 
-	// Add some predefined incidents for demonstration
-	incidents = append(incidents, fiber.Map{
-		"id":        "incident_stylist_ai_" + time.Now().Format("20060102150405"),
-		"status":    "monitoring",
-		"agent":     "Stylist-AI",
-		"event":     "Latency spike 1200ms",
-		"time":      "10m ago",
-		"duration":  "4m 12s",
-		"resolution": "Auto-scaled 2 replicas",
-	})
+	// No mock incidents - all data is from live system logs
 
 	return response.Success(c, "Active incidents retrieved", incidents)
 }
@@ -285,13 +276,20 @@ func (h *Handler) GetSystemHealth(c *fiber.Ctx) error {
 		healthScore = 0
 	}
 
+	status := "healthy"
+	if errorLogsLast24h > 10 {
+		status = "degraded"
+	} else if errorLogsLast24h > 5 {
+		status = "warning"
+	}
+
 	return response.Success(c, "System health metrics retrieved", fiber.Map{
-		"cpu_usage_percent":     12.4,
-		"memory_usage_mb":       248.5,
+		"cpu_usage_percent":     0,
+		"memory_usage_mb":       0,
 		"active_db_connections": activeConnections,
-		"uptime_seconds":         86400,
+		"uptime_seconds":         0,
 		"redis_status":          "disabled",
-		"status":                "healthy",
+		"status":                status,
 		"health_score":          healthScore,
 		"error_rate_last_24h":   float64(errorLogsLast24h),
 		"requests_last_hour":    totalRequests,
@@ -328,25 +326,39 @@ func (h *Handler) GetRevenueMonitoring(c *fiber.Ctx) error {
 			}
 		}
 
+	// Real category breakdown from outfits table
+	type CategoryStats struct {
+		Name   string
+		Total  float64
+	}
+	var catStats []CategoryStats
+	_ = h.db.Table("transactions").
+		Select("outfits.category as name, COALESCE(SUM(transactions.amount), 0) as total").
+		Joins("join bookings on bookings.id = transactions.booking_id").
+		Joins("join outfits on outfits.id = bookings.outfit_id").
+		Where("transactions.status = 'completed' AND transactions.type = 'rental_payment'").
+		Group("outfits.category").
+		Order("total desc").
+		Limit(5).
+		Scan(&catStats).Error
+
+	var topCategories []fiber.Map
+	for _, cs := range catStats {
+		topCategories = append(topCategories, fiber.Map{
+			"name":    cs.Name,
+			"revenue": cs.Total,
+			"growth":  0,
+		})
+	}
+
 	return response.Success(c, "Revenue monitoring data retrieved", fiber.Map{
 		"gross_booking_volume": gbv,
 		"commission_earned":   commission,
 		"payouts_completed":   gbv - commission,
 		"mrr_growth_percent":  monthlyGrowthPercent,
-		"revenue_trend": []fiber.Map{
-			{"period": "Jan", "revenue": 125000},
-			{"period": "Feb", "revenue": 130000},
-			{"period": "Mar", "revenue": 135000},
-			{"period": "Apr", "revenue": 142000},
-			{"period": "May", "revenue": 148000},
-			{"period": "Jun", "revenue": 156000},
-		},
-		"top_categories": []fiber.Map{
-			{"name": "Dresses", "revenue": 45000, "growth": 12.5},
-			{"name": "Tops", "revenue": 38000, "growth": 8.2},
-			{"name": "Bottoms", "revenue": 32000, "growth": 15.3},
-		},
-		"timestamp": time.Now(),
+		"revenue_trend":       []fiber.Map{},
+		"top_categories":      topCategories,
+		"timestamp":           time.Now(),
 	})
 }
 

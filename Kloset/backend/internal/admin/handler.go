@@ -148,6 +148,78 @@ func (h *Handler) BanUser(c *fiber.Ctx) error {
 	return response.Success(c, "User ban status toggled successfully", nil)
 }
 
+func (h *Handler) GetRevenueAnalytics(c *fiber.Ctx) error {
+	data, err := h.service.GetRevenueAnalytics()
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Success(c, "Revenue analytics retrieved", data)
+}
+
+func (h *Handler) ListBookings(c *fiber.Ctx) error {
+	page := c.QueryInt("page", 1)
+	perPage := c.QueryInt("per_page", 20)
+	status := c.Query("status")
+	data, total, err := h.service.ListBookings(page, perPage, status)
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Paginated(c, data, page, perPage, total)
+}
+
+func (h *Handler) ListPayments(c *fiber.Ctx) error {
+	page := c.QueryInt("page", 1)
+	perPage := c.QueryInt("per_page", 20)
+	data, total, err := h.service.ListPayments(page, perPage)
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Paginated(c, data, page, perPage, total)
+}
+
+func (h *Handler) ListAllUsers(c *fiber.Ctx) error {
+	users, err := h.service.ListAllUsers()
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Success(c, "Users list retrieved", users)
+}
+
+func (h *Handler) ListAllSellers(c *fiber.Ctx) error {
+	sellers, err := h.service.ListAllSellers()
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Success(c, "Sellers list retrieved", sellers)
+}
+
+func (h *Handler) ListAllTransactions(c *fiber.Ctx) error {
+	txs, err := h.service.ListAllTransactions()
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Success(c, "Transactions list retrieved", txs)
+}
+
+func (h *Handler) GetPlatformSettings(c *fiber.Ctx) error {
+	settings, err := h.service.GetPlatformSettings()
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Success(c, "Platform settings retrieved", settings)
+}
+
+func (h *Handler) UpdatePlatformSettings(c *fiber.Ctx) error {
+	var settings map[string]interface{}
+	if err := c.BodyParser(&settings); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+	if err := h.service.UpdatePlatformSettings(settings); err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Success(c, "Platform settings updated", nil)
+}
+
 func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handler, adminMiddleware fiber.Handler) {
 	admin := router.Group("/admin", authMiddleware, adminMiddleware)
 	admin.Get("/stats", h.GetStats)
@@ -161,4 +233,12 @@ func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handl
 	admin.Get("/disputes", h.GetDisputes)
 	admin.Put("/disputes/:id/resolve", h.ResolveDispute)
 	admin.Post("/users/:userId/ban", h.BanUser)
+	admin.Get("/analytics/revenue", h.GetRevenueAnalytics)
+	admin.Get("/bookings", h.ListBookings)
+	admin.Get("/payments", h.ListPayments)
+	admin.Get("/users", h.ListAllUsers)
+	admin.Get("/sellers", h.ListAllSellers)
+	admin.Get("/transactions", h.ListAllTransactions)
+	admin.Get("/settings", h.GetPlatformSettings)
+	admin.Put("/settings", h.UpdatePlatformSettings)
 }

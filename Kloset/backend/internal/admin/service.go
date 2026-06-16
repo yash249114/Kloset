@@ -593,6 +593,110 @@ func (s *Service) GetAIOpsStats() (map[string]interface{}, error) {
 	}, nil
 }
 
+func (s *Service) GetRevenueAnalytics() ([]map[string]interface{}, error) {
+	var data []map[string]interface{}
+	err := s.db.Table("transactions").
+		Select("DATE(created_at) as date, SUM(amount) as revenue, COUNT(*) as bookings").
+		Where("status = 'completed' AND type = 'rental_payment'").
+		Group("DATE(created_at)").
+		Order("date ASC").
+		Limit(30).
+		Find(&data).Error
+	return data, err
+}
+
+func (s *Service) ListBookings(page, perPage int, status string) ([]map[string]interface{}, int64, error) {
+	var data []map[string]interface{}
+	var total int64
+
+	query := s.db.Table("bookings").
+		Select("bookings.*, users.name as renter_name, outfits.title as outfit_title").
+		Joins("left join users on users.id = bookings.renter_id").
+		Joins("left join outfits on outfits.id = bookings.outfit_id")
+	if status != "" {
+		query = query.Where("bookings.status = ?", status)
+	}
+	query.Count(&total)
+	err := query.Order("bookings.created_at DESC").Offset((page - 1) * perPage).Limit(perPage).Find(&data).Error
+	return data, total, err
+}
+
+func (s *Service) ListPayments(page, perPage int) ([]map[string]interface{}, int64, error) {
+	var data []map[string]interface{}
+	var total int64
+
+	query := s.db.Table("transactions").
+		Select("transactions.*, users.name as user_name").
+		Joins("left join users on users.id = transactions.user_id")
+	query.Count(&total)
+	err := query.Order("transactions.created_at DESC").Offset((page - 1) * perPage).Limit(perPage).Find(&data).Error
+	return data, total, err
+}
+
+func (s *Service) ListAllUsers() ([]map[string]interface{}, error) {
+	var data []map[string]interface{}
+	err := s.db.Table("users").
+		Select("id, name, email, phone, role, trust_score, kyc_status, wallet_balance, is_verified, created_at").
+		Order("created_at DESC").
+		Find(&data).Error
+	return data, err
+}
+
+func (s *Service) ListAllSellers() ([]map[string]interface{}, error) {
+	var data []map[string]interface{}
+	err := s.db.Table("users").
+		Select("id, name, email, phone, business_name, trust_score, is_verified, kyc_status, wallet_balance, created_at").
+		Where("role = 'seller'").
+		Order("created_at DESC").
+		Find(&data).Error
+	return data, err
+}
+
+func (s *Service) ListAllTransactions() ([]map[string]interface{}, error) {
+	var data []map[string]interface{}
+	err := s.db.Table("transactions").
+		Select("transactions.*, users.name as user_name").
+		Joins("left join users on users.id = transactions.user_id").
+		Order("transactions.created_at DESC").
+		Limit(100).
+		Find(&data).Error
+	return data, err
+}
+
+func (s *Service) GetPlatformSettings() (map[string]interface{}, error) {
+	settings := map[string]interface{}{
+		"platform_take_rate":           5.0,
+		"gst_rate":                     8.0,
+		"cleaning_fee":                 299,
+		"min_rental_days":              1,
+		"max_rental_days":              14,
+		"security_deposit_multiplier":  2.0,
+		"auto_release_days":            3,
+	}
+	var count int64
+	s.db.Table("platform_settings").Count(&count)
+	if count > 0 {
+		var dbSettings []map[string]interface{}
+		s.db.Table("platform_settings").Find(&dbSettings)
+		if len(dbSettings) > 0 {
+			for k, v := range dbSettings[0] {
+				settings[k] = v
+			}
+		}
+	}
+	return settings, nil
+}
+
+func (s *Service) UpdatePlatformSettings(settings map[string]interface{}) error {
+	var count int64
+	s.db.Table("platform_settings").Count(&count)
+	if count == 0 {
+		settings["id"] = uuid.New()
+		return s.db.Table("platform_settings").Create(&settings).Error
+	}
+	return s.db.Table("platform_settings").Where("1 = 1").Updates(&settings).Error
+}
+
 func (s *Service) ListPendingOutfits() ([]map[string]interface{}, error) {
 	var outfits []map[string]interface{}
 	err := s.db.Table("outfits").

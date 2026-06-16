@@ -3,24 +3,29 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, RefreshCcw, Cpu, CheckCircle, AlertTriangle, Zap, Clock, BarChart3, AlertOctagon, ShieldAlert, Server } from 'lucide-react';
-import { adminAPI } from '@/lib/api';
+import { adminAPI, AIOpsResponse } from '@/lib/api';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { toast } from 'sonner';
 
-interface AIOpsData {
-  active_agentsCount: number;
-  calls_last_hour: number;
-  latency_avg_ms: number;
-  status: string;
-  uptime: string;
-  logs: Array<{
-    time: string;
-    agent: string;
-    event: string;
-    detail: string;
-  }>;
+interface AdminAlert {
+  id: string;
+  level: 'critical' | 'warning' | 'info';
+  agent: string;
+  message: string;
+  time: string;
+  metric: string;
+}
+
+interface AdminIncident {
+  id: string;
+  status: 'resolved' | 'investigating' | 'monitoring';
+  agent: string;
+  event: string;
+  time: string;
+  duration: string;
+  resolution: string;
 }
 
 function PriorityBadge({ level }: { level: string }) {
@@ -46,9 +51,9 @@ function StatusDot({ status }: { status: string }) {
 }
 
 export default function AdminAIOpsPage() {
-  const [data, setData] = useState<AIOpsData | null>(null);
-  const [alerts, setAlerts] = useState<any[]>([]);
-  const [incidents, setIncidents] = useState<any[]>([]);
+  const [data, setData] = useState<AIOpsResponse | null>(null);
+  const [alerts, setAlerts] = useState<AdminAlert[]>([]);
+  const [incidents, setIncidents] = useState<AdminIncident[]>([]);
   const [systemHealth, setSystemHealth] = useState<any>(null);
   const [revenue, setRevenue] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -60,16 +65,16 @@ export default function AdminAIOpsPage() {
     try {
       const [resp, alertsData, incidentsData, systemHealthData, revenueData] = await Promise.all([
         adminAPI.getAIOps(),
-        fetch('/api/aiops?type=alerts').then(res => res.json()),
-        fetch('/api/aiops?type=incidents').then(res => res.json()),
-        fetch('/api/aiops?type=system-health').then(res => res.json()),
-        fetch('/api/aiops?type=revenue').then(res => res.json()),
+        fetch('/api/admin/monitoring/alerts').then(res => res.json()),
+        fetch('/api/admin/monitoring/incidents').then(res => res.json()),
+        fetch('/api/admin/monitoring/system-health').then(res => res.json()),
+        fetch('/api/admin/monitoring/revenue').then(res => res.json()),
       ]);
       setData(resp);
-      setAlerts(alertsData);
-      setIncidents(incidentsData);
-      setSystemHealth(systemHealthData);
-      setRevenue(revenueData);
+      setAlerts(alertsData.data || alertsData || []);
+      setIncidents(incidentsData.data || incidentsData || []);
+      setSystemHealth(systemHealthData.data || systemHealthData);
+      setRevenue(revenueData.data || revenueData);
     } catch {
       toast.error('Failed to load AIOps data.');
     } finally {
@@ -192,19 +197,24 @@ export default function AdminAIOpsPage() {
                   <AlertOctagon size={14} className="text-champagne" /> Active Alerts by Priority
                 </h3>
                 <div className="space-y-2 max-h-56 overflow-y-auto scroll-rail">
-                  {alerts.map((alert) => (
-                    <div key={alert.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
-                      <PriorityBadge level={alert.level} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-[#E8E8E8]">{alert.agent}</span>
-                          <span className="text-[8px] font-mono text-[#8C8C8C]">{alert.time}</span>
+                  {alerts.length > 0 ? (
+                    alerts.map((alert) => (
+                      <div key={alert.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
+                        <PriorityBadge level={alert.level} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-[#E8E8E8]">{alert.agent}</span>
+                            <span className="text-[8px] font-mono text-[#8C8C8C]">{alert.time}</span>
+                          </div>
+                          <p className="text-[10px] text-[#C9C9C9] leading-relaxed">{alert.message}</p>
+                          <span className="text-[8px] font-mono text-champagne">{alert.metric}</span>
                         </div>
-                        <p className="text-[10px] text-[#C9C9C9] leading-relaxed">{alert.message}</p>
-                        <span className="text-[8px] font-mono text-champagne">{alert.metric}</span>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="py-8 text-center text-[#8C8C8C]">No active alerts - all systems nominal</div>
+                  )}
                 </div>
               </Card>
 
@@ -213,25 +223,29 @@ export default function AdminAIOpsPage() {
                   <Activity size={14} className="text-champagne" /> Incident Feed
                 </h3>
                 <div className="space-y-2 max-h-56 overflow-y-auto scroll-rail">
-                  {incidents.map((inc) => (
-                    <div key={inc.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
-                      <StatusDot status={inc.status} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-bold text-[#E8E8E8]">{inc.agent}</span>
-                          <Badge variant={inc.status === 'resolved' ? 'sage' : inc.status === 'investigating' ? 'gold' : 'outline'} className="!text-[7px] !px-1 !py-0 !font-mono">
-                            {inc.status}
-                          </Badge>
-                          <span className="text-[8px] font-mono text-[#8C8C8C] ml-auto">{inc.time}</span>
-                        </div>
-                        <p className="text-[10px] text-[#C9C9C9] leading-relaxed">{inc.event}</p>
-                        <div className="flex gap-3 text-[8px] font-mono text-[#8C8C8C] mt-1">
-                          <span>Duration: {inc.duration}</span>
-                          <span>{inc.resolution}</span>
+                  {incidents.length > 0 ? (
+                    incidents.map((inc) => (
+                      <div key={inc.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
+                        <StatusDot status={inc.status} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-bold text-[#E8E8E8]">{inc.agent}</span>
+                            <Badge variant={inc.status === 'resolved' ? 'sage' : inc.status === 'investigating' ? 'gold' : 'outline'} className="!text-[7px] !px-1 !py-0 !font-mono">
+                              {inc.status}
+                            </Badge>
+                            <span className="text-[8px] font-mono text-[#8C8C8C] ml-auto">{inc.time}</span>
+                          </div>
+                          <p className="text-[10px] text-[#C9C9C9] leading-relaxed">{inc.event}</p>
+                          <div className="flex gap-3 text-[8px] font-mono text-[#8C8C8C] mt-1">
+                            <span>Duration: {inc.duration}</span>
+                            <span>{inc.resolution}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="py-8 text-center text-[#8C8C8C]">No active incidents - all systems operational</div>
+                  )}
                 </div>
               </Card>
             </div>
