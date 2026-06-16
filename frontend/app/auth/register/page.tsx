@@ -35,9 +35,8 @@ export default function AuthRegisterPage() {
     setIsSubmitting(true);
     try {
       const resp = await authAPI.register({ name: name.trim(), email: email.trim(), phone: phone.trim(), password, role });
-      setAuth(resp.user, resp.access_token, resp.refresh_token);
-      toast.success(`Welcome to Kloset Luxe!`);
-      router.push(role === 'seller' ? '/seller' : '/');
+      toast.success('Account created! Check your email for the verification code.');
+      router.push(`/auth/verify-email?email=${encodeURIComponent(resp.user.email)}`);
     } catch {
       toast.error('Registration failed. Please try again.');
     } finally {

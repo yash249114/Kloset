@@ -112,7 +112,7 @@ func (u *User) ToUserResponse() UserResponse {
 	}
 }
 
-// OTPVerification represents the otp_verifications table
+// OTPVerification represents the otp_verifications table (phone-based)
 type OTPVerification struct {
 	Phone         string    `gorm:"size:50;primaryKey"`
 	Code          string    `gorm:"size:6;not null"`
@@ -126,4 +126,22 @@ type OTPVerification struct {
 // TableName specifies the table name for OTPVerification
 func (OTPVerification) TableName() string {
 	return "otp_verifications"
+}
+
+// EmailOTPVerification represents the email_otp_verifications table
+type EmailOTPVerification struct {
+	Email         string    `gorm:"size:255;primaryKey"`
+	Code          string    `gorm:"size:6;not null"`
+	ExpiresAt     time.Time `gorm:"not null;column:expires_at"`
+	CooldownUntil time.Time `gorm:"not null;column:cooldown_until"`
+	Attempts      int       `gorm:"not null;default:0"`
+	SendCount     int       `gorm:"not null;default:0"`
+	WindowStart   time.Time `gorm:"not null;column:window_start"`
+	CreatedAt     time.Time `gorm:"column:created_at"`
+	UpdatedAt     time.Time `gorm:"column:updated_at"`
+}
+
+// TableName specifies the table name for EmailOTPVerification
+func (EmailOTPVerification) TableName() string {
+	return "email_otp_verifications"
 }

@@ -170,9 +170,16 @@ client.interceptors.response.use(
 );
 
 // ─── AUTH ENDPOINTS ──────────────────────────────────
+
+export interface RegisterResponse {
+  user: User;
+  requires_otp: boolean;
+  message: string;
+}
+
 export const authAPI = {
-  register: async (payload: RegisterPayload): Promise<AuthResponse> => {
-    const { data } = await client.post<APIResponse<AuthResponse>>('/auth/register', payload);
+  register: async (payload: RegisterPayload): Promise<RegisterResponse> => {
+    const { data } = await client.post<APIResponse<RegisterResponse>>('/auth/register', payload);
     return data.data!;
   },
 
@@ -208,6 +215,15 @@ export const authAPI = {
 
   resetPassword: async (token: string, password: string): Promise<void> => {
     await client.post('/auth/reset-password', { token, password });
+  },
+
+  sendEmailOTP: async (email: string): Promise<void> => {
+    await client.post('/auth/otp/email/send', { email });
+  },
+
+  verifyEmailOTP: async (email: string, code: string): Promise<AuthResponse> => {
+    const { data } = await client.post<APIResponse<AuthResponse>>('/auth/otp/email/verify', { email, code });
+    return data.data!;
   },
 };
 

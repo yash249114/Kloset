@@ -22,7 +22,7 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-// Register handles POST /auth/register
+// Register handles POST /auth/register (returns user + requires OTP verification)
 func (h *Handler) Register(c *fiber.Ctx) error {
 	var req RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -33,13 +33,16 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	result, err := h.service.Register(&req)
+	user, err := h.service.Register(&req)
 	if err != nil {
 		return response.Conflict(c, err.Error())
 	}
 
-	h.setAuthCookies(c, result.AccessToken, result.RefreshToken)
-	return response.Created(c, "Account created successfully", result)
+	return response.Created(c, "Account created. Please verify your email.", RegisterResponse{
+		User:        *user,
+		RequiresOTP: true,
+		Message:     "A 6-digit verification code has been sent to your email.",
+	})
 }
 
 // Login handles POST /auth/login
@@ -174,6 +177,45 @@ func (h *Handler) VerifyOTP(c *fiber.Ctx) error {
 	return response.Success(c, "Phone number verified successfully", nil)
 }
 
+// SendEmailOTP handles POST /auth/otp/email/send
+func (h *Handler) SendEmailOTP(c *fiber.Ctx) error {
+	var req SendEmailOTPRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		return response.BadRequest(c, "Validation failed: "+err.Error())
+	}
+
+	err := h.service.SendEmailOTP(req.Email)
+	if err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Success(c, "Verification code sent to your email", nil)
+}
+
+// VerifyEmailOTP handles POST /auth/otp/email/verify
+func (h *Handler) VerifyEmailOTP(c *fiber.Ctx) error {
+	var req VerifyEmailOTPRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		return response.BadRequest(c, "Validation failed: "+err.Error())
+	}
+
+	result, err := h.service.VerifyEmailOTP(req.Email, req.Code)
+	if err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+
+	h.setAuthCookies(c, result.AccessToken, result.RefreshToken)
+	return response.Success(c, "Email verified successfully", result)
+}
+
 // RegisterRoutes sets up auth routes
 func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handler) {
 	auth := router.Group("/auth")
@@ -182,6 +224,8 @@ func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handl
 	auth.Post("/google", h.GoogleLogin)
 	auth.Post("/otp/send", h.SendOTP)
 	auth.Post("/otp/verify", h.VerifyOTP)
+	auth.Post("/otp/email/send", h.SendEmailOTP)
+	auth.Post("/otp/email/verify", h.VerifyEmailOTP)
 	auth.Post("/refresh", h.Refresh)
 	auth.Post("/logout", authMiddleware, h.Logout)
 	auth.Get("/me", authMiddleware, h.Me)

@@ -72,6 +72,7 @@ func main() {
 		&logging.SystemLog{},
 		&email.EmailLog{},
 		&auth.OTPVerification{},
+		&auth.EmailOTPVerification{},
 		&middleware.RateLimitEvent{},
 		&email.EmailQueue{},
 		&logging.AICache{},
@@ -162,7 +163,7 @@ func main() {
 
 	// ─── Auth Module ───────────────────────────
 	authRepo := auth.NewRepository(db)
-	authService := auth.NewService(authRepo, cfg, notifService, logService)
+	authService := auth.NewService(authRepo, cfg, notifService, logService, emailService)
 	authHandler := auth.NewHandler(authService)
 
 	// ─── Outfit Module ─────────────────────────

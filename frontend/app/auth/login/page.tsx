@@ -38,8 +38,14 @@ function AuthLoginForm() {
       setAuth(resp.user, resp.access_token, resp.refresh_token);
       toast.success('Welcome back to Kloset Luxe.');
       router.push(redirectTo);
-    } catch {
-      toast.error('Invalid credentials. Please try again.');
+    } catch (err: unknown) {
+      const msg = isAxiosError(err) ? err.response?.data?.error : '';
+      if (msg && msg.toLowerCase().includes('not verified')) {
+        toast.error('Email not verified. Redirecting to verification...');
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email.trim())}`);
+      } else {
+        toast.error('Invalid credentials. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
