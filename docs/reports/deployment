@@ -1,0 +1,139 @@
+# DEPLOYMENT SOURCE OF TRUTH
+
+**Repo:** `yash249114/Kloset`
+**Date:** 2026-06-16
+**Production Branch:** `main`
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────┐
+│  GitHub — yash249114/Kloset (monorepo)              │
+│  ┌────────────────────┐  ┌────────────────────────┐ │
+│  │  frontend/         │  │  backend/              │ │
+│  │  Next.js 16.2.6    │  │  Go 1.22              │ │
+│  └──────┬─────────────┘  └──────┬─────────────────┘ │
+└─────────┼──────────────────────┼─────────────────────┘
+          │                      │
+          ▼                      ▼
+     Vercel (kloset.in)     Render (api.kloset.in)
+```
+
+---
+
+## Frontend — Vercel
+
+| Property | Value | Source |
+|----------|-------|--------|
+| **Provider** | Vercel | `.github/workflows/deploy.yml` |
+| **Project root** | `frontend/` | Location of `vercel.json` |
+| **Framework** | Next.js 16.2.6 | `frontend/package.json:21` |
+| **Build command** | `npm run build` | `frontend/vercel.json:3` |
+| **Output directory** | `.next` | `frontend/vercel.json:4` |
+| **Install command** | `npm install` | `frontend/vercel.json:6` |
+| **Node version** | 20 | `.github/workflows/ci.yml:13` |
+| **Region** | `bom1` (Mumbai) | `frontend/vercel.json:7` |
+| **Domain** | `https://kloset.in` | `.github/workflows/deploy.yml:58` |
+| **API URL** | `https://api.kloset.in/api/v1` | `frontend/.env.production:7` |
+| **Deploy trigger** | Push to `main` | `.github/workflows/deploy.yml:5` |
+| **Deploy method** | GitHub Integration (auto) | `.github/workflows/deploy.yml:27` |
+
+### Build pipeline (CI — `.github/workflows/ci.yml`)
+```
+frontend/
+  → npm ci
+  → npm run lint
+  → npx tsc --noEmit
+  → npm run build  (env vars injected for CI)
+```
+
+### Security headers (via `vercel.json`)
+- `Strict-Transport-Security`: max-age=63072000; preload
+- `X-Content-Type-Options`: nosniff
+- `X-Frame-Options`: DENY
+- `X-XSS-Protection`: 1; mode=block
+- `Referrer-Policy`: strict-origin-when-cross-origin
+- `Permissions-Policy`: camera=(), microphone=(), geolocation=()
+
+---
+
+## Backend — Render
+
+| Property | Value | Source |
+|----------|-------|--------|
+| **Provider** | Render | `.github/workflows/deploy.yml` |
+| **Project root** | `backend/` | Location of `Dockerfile` |
+| **Runtime** | Docker (Go 1.22 Alpine) | `backend/Dockerfile:1` |
+| **Build** | `go build -o server ./cmd/server` | `backend/Dockerfile:11` |
+| **Port** | 8080 | `backend/Dockerfile:19` |
+| **Domain** | `https://api.kloset.in` | `backend/.env.production:9` |
+| **Frontend URL (CORS)** | `https://kloset.in` | `backend/.env.production:10` |
+| **Health check** | `GET /health` (30s interval) | `backend/Dockerfile:21-22` |
+| **Deploy trigger** | Push to `main` via webhook | `.github/workflows/deploy.yml:37` |
+| **Deploy method** | Render Webhook Integration | `.github/workflows/deploy.yml:36-37` |
+
+### Build pipeline (CI — `.github/workflows/ci.yml`)
+```
+backend/
+  → go mod download
+  → go vet ./...
+  → go build -o /dev/null ./cmd/server
+  → go test -short -timeout 60s ./...
+```
+
+---
+
+## GitHub Branch Strategy
+
+| Branch | Purpose | CI Runs | Deploys |
+|--------|---------|---------|---------|
+| `main` | Production | ✅ Lint + Build + Test + Security | ✅ Vercel + Render |
+| `release-candidate` | Pre-production QA | ✅ Lint + Build + Test + Security | ❌ |
+| `luxury-ui-final` | Feature (UX overhaul) | ❌ | ❌ |
+| `renter-production` | Feature (renter) | ❌ | ❌ |
+| `seller-production` | Feature (seller) | ❌ | ❌ |
+
+**Remote:** `https://github.com/yash249114/Kloset.git`
+
+---
+
+## Post-Deploy Verification `.github/workflows/deploy.yml:40-67`
+
+```
+1. Wait 60s for propagation
+2. Health check GET https://api.kloset.in/health → expect 200
+3. Health check GET https://kloset.in → expect 200
+4. API response validation
+```
+
+---
+
+## Which Frontend is Actually Deployed?
+
+**The only frontend deployed is `frontend/` (Next.js).** Confirmed by:
+
+1. **Vercel config** at `frontend/vercel.json` — only `vercel.json` in the repo
+2. **CI defaults** at `.github/workflows/ci.yml:24` — `working-directory: frontend`
+3. **Package.json** at `frontend/package.json` — `"build": "next build"`
+4. **No root package.json** — no monorepo workspace config in repo root
+5. **Docker Compose** at `docker-compose.yml:43` — `context: ./frontend`
+6. **No other frontend directories** — no `Kloset/frontend/`, no `web/`, no `client/`
+
+---
+
+## Security Headers for Production
+
+```
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+```
+
+---
+
+*Report generated 2026-06-16. Source: `frontend/vercel.json`, `backend/Dockerfile`, `.github/workflows/`, `package.json`.*
