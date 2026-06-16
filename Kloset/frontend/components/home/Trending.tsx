@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -57,7 +56,7 @@ export default function Trending({ outfits }: TrendingProps) {
                 <div className="relative h-[380px] overflow-hidden rounded-2xl bg-ivory-dark">
                   <Image
                     src={imgUrl}
-                    alt={item.title}
+                    alt={item.title || 'Trending outfit'}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                     className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105"

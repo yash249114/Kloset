@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { TrendingUp, Calendar, Users, Eye, RefreshCcw } from 'lucide-react';
 import Card from '@/components/ui/Card';
@@ -55,21 +56,7 @@ export default function SellerAnalyticsPage() {
   };
 
   useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      try {
-        const [outfitsResp, bookingsResp] = await Promise.all([
-          outfitsAPI.getSellerOutfits(1),
-          bookingsAPI.listSellerBookings(1, 50),
-        ]);
-        setOutfits(outfitsResp.outfits || []);
-        setBookings(bookingsResp.bookings || []);
-      } catch {
-        toast.error('Failed to load analytics data.');
-      } finally {
-        setLoading(false);
-      }
-    };
+    const init = async () => { await loadData(); };
     init();
   }, []);
 
@@ -261,10 +248,12 @@ export default function SellerAnalyticsPage() {
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-champagne">#{i + 1}</span>
                         <div className="w-10 h-12 rounded overflow-hidden bg-ivory-dark flex-shrink-0">
-                          <img
+                          <Image
                             src={outfit.images?.[0]?.url || '/placeholder-outfit.jpg'}
                             alt={outfit.title}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="40px"
+                            className="object-cover"
                           />
                         </div>
                         <div>
