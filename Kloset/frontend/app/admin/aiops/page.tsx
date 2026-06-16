@@ -1,60 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, RefreshCcw, Cpu, Zap, BarChart3, AlertOctagon, Server } from 'lucide-react';
-import { adminAPI, AIOpsResponse } from '@/lib/api';
+import { Activity, RefreshCcw, Cpu, CheckCircle } from 'lucide-react';
+import { adminAPI } from '@/lib/api';
 import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { toast } from 'sonner';
 
-interface AdminAlert {
-  id: string;
-  level: 'critical' | 'warning' | 'info';
-  agent: string;
-  message: string;
-  time: string;
-  metric: string;
-}
-
-interface AdminIncident {
-  id: string;
-  status: 'resolved' | 'investigating' | 'monitoring';
-  agent: string;
-  event: string;
-  time: string;
-  duration: string;
-  resolution: string;
-}
-
-function PriorityBadge({ level }: { level: string }) {
-  const variants: Record<string, string> = {
-    critical: 'bg-error/20 text-error border-error/50',
-    warning: 'bg-champagne/15 text-champagne border-champagne/40',
-    info: 'bg-[#C9A96E]/5 text-[#8C8C8C] border-[#2A2A2A]',
-  };
-  return (
-    <span className={`text-[8px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border font-bold ${variants[level] || variants.info}`}>
-      {level}
-    </span>
-  );
-}
-
-function StatusDot({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    resolved: 'bg-success',
-    investigating: 'bg-champagne',
-    monitoring: 'bg-[#8C8C8C]',
-  };
-  return <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${colors[status] || 'bg-[#8C8C8C]'}`} />;
+interface AIOpsData {
+  active_agentsCount: number;
+  calls_last_hour: number;
+  latency_avg_ms: number;
+  status: string;
+  uptime: string;
+  logs: Array<{
+    time: string;
+    agent: string;
+    event: string;
+    detail: string;
+  }>;
 }
 
 export default function AdminAIOpsPage() {
-  const [data, setData] = useState<AIOpsResponse | null>(null);
-  const [alerts, setAlerts] = useState<AdminAlert[]>([]);
-  const [incidents, setIncidents] = useState<AdminIncident[]>([]);
-
+  const [data, setData] = useState<AIOpsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [pulse, setPulse] = useState(true);
 
@@ -62,15 +31,8 @@ export default function AdminAIOpsPage() {
     if (!silent) setLoading(true);
     setPulse(true);
     try {
-      const [resp, alertsData, incidentsData] = await Promise.all([
-        adminAPI.getAIOps(),
-        fetch('/api/admin/monitoring/alerts').then(res => res.json()),
-        fetch('/api/admin/monitoring/incidents').then(res => res.json()),
-      ]);
+      const resp = await adminAPI.getAIOps();
       setData(resp);
-      setAlerts(alertsData.data || alertsData || []);
-      setIncidents(incidentsData.data || incidentsData || []);
-
     } catch {
       toast.error('Failed to load AIOps data.');
     } finally {
@@ -80,9 +42,12 @@ export default function AdminAIOpsPage() {
   };
 
   useEffect(() => {
-    const init = async () => { await loadOps(); };
-    init();
-    const interval = setInterval(() => loadOps(true), 30000);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadOps();
+    const interval = setInterval(() => {
+      loadOps(true);
+    }, 30000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -102,6 +67,7 @@ export default function AdminAIOpsPage() {
       transition={springTransition}
       className="space-y-8 text-left select-none bg-admin-bg min-h-screen text-[#E8E8E8] font-sans"
     >
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <span className="text-[10px] font-mono tracking-[0.25em] text-[#C9A96E] uppercase font-bold block">
@@ -110,8 +76,8 @@ export default function AdminAIOpsPage() {
           <h1 className="text-3xl md:text-4xl font-display font-medium text-[#E8E8E8] mt-1 flex items-center gap-3">
             Agent Live Operations
             <span className="relative flex h-3.5 w-3.5">
-              {pulse && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C9A96E] opacity-75" />}
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#C9A96E]" />
+              {pulse && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C9A96E] opacity-75"></span>}
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#C9A96E]"></span>
             </span>
           </h1>
         </div>
@@ -134,25 +100,27 @@ export default function AdminAIOpsPage() {
         </div>
       ) : (
         <>
+          {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'AI Agent Instances', val: data?.active_agentsCount?.toString() || '0', icon: Cpu, desc: 'Active model bindings', sub: '4 clusters' },
-              { label: 'Calls (Last Hour)', val: data?.calls_last_hour?.toString() || '0', icon: Activity, desc: 'User queries compiled', sub: '2.1k avg/min' },
-              { label: 'Response Latency', val: `${data?.latency_avg_ms || 0}ms`, icon: Zap, desc: 'Average round-trip response', sub: data?.latency_avg_ms && data.latency_avg_ms > 400 ? '⚠ Elevated' : '✓ Normal' },
-              { label: 'System Health', val: data?.status || 'Unknown', icon: Server, desc: `Uptime: ${data?.uptime || 'N/A'}`, sub: data?.status === 'healthy' ? 'All systems go' : 'Attention needed' },
+              { label: 'AI Agent Instances', val: data?.active_agentsCount?.toString() || '0', icon: Cpu, desc: 'Active model bindings' },
+              { label: 'Calls (Last Hour)', val: data?.calls_last_hour?.toString() || '0', icon: Activity, desc: 'User queries compiled' },
+              { label: 'Response Latency', val: `${data?.latency_avg_ms || 0}ms`, icon: RefreshCcw, desc: 'Average round-trip response' },
+              { label: 'System Health', val: data?.status || 'Unknown', icon: CheckCircle, desc: `Uptime: ${data?.uptime || 'N/A'}` },
             ].map((st, index) => (
-              <motion.div key={st.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ ...springTransition, delay: index * 0.05 }}>
-                <Card hoverEffect={true} padding="sm" theme="admin" className="flex flex-col justify-between h-28 w-full relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-16 h-16 -mr-4 -mt-4 rounded-full bg-[#C9A96E]/[0.03]" />
-                  <div className="flex items-center justify-between text-[#8C8C8C] relative">
+              <motion.div
+                key={st.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...springTransition, delay: index * 0.05 }}
+              >
+                <Card hoverEffect={false} padding="sm" theme="admin" className="flex flex-col justify-between h-28 w-full">
+                  <div className="flex items-center justify-between text-[#8C8C8C]">
                     <span className="text-[9px] font-mono tracking-wider uppercase">{st.label}</span>
                     <st.icon size={13} className="text-[#C9A96E]" />
                   </div>
-                  <div className="relative">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-xl font-bold font-mono text-[#E8E8E8]">{st.val}</span>
-                      <span className="text-[8px] font-mono text-[#8C8C8C]">{st.sub}</span>
-                    </div>
+                  <div>
+                    <span className="text-xl font-bold font-mono text-[#E8E8E8]">{st.val}</span>
                     <span className="text-[8px] text-[#8C8C8C] block mt-0.5">{st.desc}</span>
                   </div>
                 </Card>
@@ -160,26 +128,24 @@ export default function AdminAIOpsPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...springTransition, delay: 0.2 }}
+            className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+          >
+            {/* Latency Area Chart */}
             <Card hoverEffect={false} padding="md" theme="admin" className="lg:col-span-7">
-              <h3 className="font-display text-sm font-bold mb-6 flex items-center gap-2">
-                <BarChart3 size={14} className="text-[#C9A96E]" /> Model Latency Track (ms)
-              </h3>
+              <h3 className="font-display text-base font-semibold mb-6">Model Latency Track (ms)</h3>
               <div className="h-72 w-full text-xs">
                 {latencyChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={latencyChartData}>
-                      <defs>
-                        <linearGradient id="latencyGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#C9A96E" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#C9A96E" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" />
-                      <XAxis dataKey="time" stroke="#8C8C8C" tick={{ fontSize: 10 }} />
-                      <YAxis stroke="#8C8C8C" tick={{ fontSize: 10 }} />
-                      <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid #2A2A2A', color: '#E8E8E8', borderRadius: '8px', fontSize: '12px' }} />
-                      <Area type="monotone" name="Latency (ms)" dataKey="latency" stroke="#C9A96E" fill="url(#latencyGrad)" strokeWidth={2} />
+                      <XAxis dataKey="time" stroke="#8C8C8C" />
+                      <YAxis stroke="#8C8C8C" />
+                      <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid #2A2A2A', color: '#E8E8E8' }} />
+                      <Area type="monotone" name="Latency (ms)" dataKey="latency" stroke="#C9A96E" fill="#C9A96E" fillOpacity={0.15} strokeWidth={2} />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
@@ -188,86 +154,29 @@ export default function AdminAIOpsPage() {
               </div>
             </Card>
 
-            <div className="lg:col-span-5 space-y-6">
-              <Card hoverEffect={false} padding="md" theme="admin">
-                <h3 className="font-display text-sm font-bold mb-4 flex items-center gap-2">
-                  <AlertOctagon size={14} className="text-champagne" /> Active Alerts by Priority
-                </h3>
-                <div className="space-y-2 max-h-56 overflow-y-auto scroll-rail">
-                  {alerts.length > 0 ? (
-                    alerts.map((alert) => (
-                      <div key={alert.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
-                        <PriorityBadge level={alert.level} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-[#E8E8E8]">{alert.agent}</span>
-                            <span className="text-[8px] font-mono text-[#8C8C8C]">{alert.time}</span>
-                          </div>
-                          <p className="text-[10px] text-[#C9C9C9] leading-relaxed">{alert.message}</p>
-                          <span className="text-[8px] font-mono text-champagne">{alert.metric}</span>
+            {/* Live Logs */}
+            <Card hoverEffect={false} padding="md" theme="admin" className="lg:col-span-5 flex flex-col justify-between">
+              <div className="space-y-4 text-xs">
+                <h3 className="font-display text-sm font-bold text-[#E8E8E8]">Live Query Streams</h3>
+                <div className="space-y-3 font-mono text-[10px] text-[#8C8C8C] max-h-64 overflow-y-auto scroll-rail">
+                  {data?.logs && data.logs.length > 0 ? (
+                    data.logs.map((l, i) => (
+                      <div key={i} className="p-2.5 border border-[#2A2A2A] bg-[#131313] rounded space-y-1">
+                        <div className="flex justify-between items-center text-[#C9A96E] font-bold">
+                          <span>{l.agent}</span>
+                          <span>{l.time}</span>
                         </div>
+                        <p className="font-bold text-[#E8E8E8]">{l.event}</p>
+                        <p className="font-light text-[9px]">{l.detail}</p>
                       </div>
                     ))
                   ) : (
-                    <div className="py-8 text-center text-[#8C8C8C]">No active alerts - all systems nominal</div>
+                    <div className="py-8 text-center text-[#8C8C8C]">No query logs available</div>
                   )}
                 </div>
-              </Card>
-
-              <Card hoverEffect={false} padding="md" theme="admin">
-                <h3 className="font-display text-sm font-bold mb-4 flex items-center gap-2">
-                  <Activity size={14} className="text-champagne" /> Incident Feed
-                </h3>
-                <div className="space-y-2 max-h-56 overflow-y-auto scroll-rail">
-                  {incidents.length > 0 ? (
-                    incidents.map((inc) => (
-                      <div key={inc.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
-                        <StatusDot status={inc.status} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] font-bold text-[#E8E8E8]">{inc.agent}</span>
-                            <Badge variant={inc.status === 'resolved' ? 'sage' : inc.status === 'investigating' ? 'gold' : 'outline'} className="!text-[7px] !px-1 !py-0 !font-mono">
-                              {inc.status}
-                            </Badge>
-                            <span className="text-[8px] font-mono text-[#8C8C8C] ml-auto">{inc.time}</span>
-                          </div>
-                          <p className="text-[10px] text-[#C9C9C9] leading-relaxed">{inc.event}</p>
-                          <div className="flex gap-3 text-[8px] font-mono text-[#8C8C8C] mt-1">
-                            <span>Duration: {inc.duration}</span>
-                            <span>{inc.resolution}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="py-8 text-center text-[#8C8C8C]">No active incidents - all systems operational</div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          </div>
-
-          <Card hoverEffect={false} padding="md" theme="admin">
-            <h3 className="font-display text-sm font-bold mb-4 flex items-center gap-2">
-              <Server size={14} className="text-[#C9A96E]" /> Live Query Streams
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-[10px]">
-              {data?.logs && data.logs.length > 0 ? (
-                data.logs.map((l, i) => (
-                  <div key={i} className="p-3 border border-[#2A2A2A] bg-[#131313] rounded space-y-1">
-                    <div className="flex justify-between items-center text-[#C9A96E] font-bold">
-                      <span>{l.agent}</span>
-                      <span className="text-[8px]">{l.time}</span>
-                    </div>
-                    <p className="font-bold text-[#E8E8E8]">{l.event}</p>
-                    <p className="font-light text-[9px] text-[#8C8C8C]">{l.detail}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-2 py-8 text-center text-[#8C8C8C]">No query logs available</div>
-              )}
-            </div>
-          </Card>
+              </div>
+            </Card>
+          </motion.div>
         </>
       )}
     </motion.div>

@@ -1,31 +1,18 @@
 'use client';
 
+import React from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useCartStore, calculateRentalDays } from '@/store/useCartStore';
 import Button from '@/components/ui/Button';
 
 const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
 export default function CartPage() {
-  const { cartItems, _hasHydrated, removeItem, getCalculations } = useCartStore();
+  const { cartItems, removeItem, getCalculations } = useCartStore();
   const calculations = getCalculations();
-
-  if (!_hasHydrated) {
-    return (
-      <div className="max-w-4xl mx-auto py-12 px-4">
-        <div className="space-y-4 animate-pulse">
-          <div className="h-4 bg-ivory-dark rounded w-24 mb-8" />
-          <div className="h-8 bg-ivory-dark rounded w-48 mb-4" />
-          {[1, 2].map((i) => (
-            <div key={i} className="h-24 bg-white border border-border rounded-xl" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   if (cartItems.length === 0) {
     return (
@@ -75,13 +62,14 @@ export default function CartPage() {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex gap-4 p-4 bg-white border border-border rounded-xl"
               >
-                <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 relative">
+                <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
                   <Image
                     src={item.image}
                     alt={item.title}
-                    fill
-                    sizes="96px"
-                    className="object-cover"
+                    width={96}
+                    height={96}
+                    unoptimized
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="flex-1 min-w-0">

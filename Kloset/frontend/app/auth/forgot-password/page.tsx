@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { isAxiosError } from 'axios';
 import { authAPI } from '@/lib/api';
 import Button from '@/components/ui/Button';
 
@@ -28,9 +27,8 @@ function ForgotPasswordForm() {
       await authAPI.forgotPassword(email.trim());
       toast.success('Password reset link sent to your email!');
       router.push(`/auth/reset-password?email=${encodeURIComponent(email.trim())}`);
-    } catch (err: unknown) {
-      const msg = isAxiosError(err) ? err.response?.data?.error : '';
-      toast.error(msg || 'Failed to send reset link. Please try again.');
+    } catch {
+      toast.error('Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -11277,10 +11277,10 @@ client.interceptors.response.use(
         if (typeof window !== 'undefined') {
           document.cookie = 'kloset-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
           const pathname = window.location.pathname;
-          const protectedPaths = ['/dashboard', '/seller', '/admin', '/booking', '/outfit/new'];
+          const protectedPaths = ['/dashboard', '/seller', '/admin', '/booking', '/outfit/new', '/orders', '/wishlist', '/support', '/cart'];
           const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
           if (isProtected) {
-            window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
+            window.location.href = `/auth/login?redirect=${encodeURIComponent(pathname)}`;
           } else if (hasAccessToken) {
             window.location.reload();
           }
@@ -11315,10 +11315,10 @@ client.interceptors.response.use(
         if (typeof window !== 'undefined') {
           document.cookie = 'kloset-auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
           const pathname = window.location.pathname;
-          const protectedPaths = ['/dashboard', '/seller', '/admin', '/booking', '/outfit/new'];
+          const protectedPaths = ['/dashboard', '/seller', '/admin', '/booking', '/outfit/new', '/orders', '/wishlist', '/support', '/cart'];
           const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
           if (isProtected) {
-            window.location.href = `/login?redirect=${encodeURIComponent(pathname)}`;
+            window.location.href = `/auth/login?redirect=${encodeURIComponent(pathname)}`;
           } else if (hasAccessToken) {
             window.location.reload();
           }

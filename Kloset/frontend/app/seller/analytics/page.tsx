@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { TrendingUp, Calendar, Users, Eye, RefreshCcw } from 'lucide-react';
@@ -56,7 +56,21 @@ export default function SellerAnalyticsPage() {
   };
 
   useEffect(() => {
-    const init = async () => { await loadData(); };
+    const init = async () => {
+      setLoading(true);
+      try {
+        const [outfitsResp, bookingsResp] = await Promise.all([
+          outfitsAPI.getSellerOutfits(1),
+          bookingsAPI.listSellerBookings(1, 50),
+        ]);
+        setOutfits(outfitsResp.outfits || []);
+        setBookings(bookingsResp.bookings || []);
+      } catch {
+        toast.error('Failed to load analytics data.');
+      } finally {
+        setLoading(false);
+      }
+    };
     init();
   }, []);
 
@@ -251,9 +265,10 @@ export default function SellerAnalyticsPage() {
                           <Image
                             src={outfit.images?.[0]?.url || '/placeholder-outfit.jpg'}
                             alt={outfit.title}
-                            fill
-                            sizes="40px"
-                            className="object-cover"
+                            width={40}
+                            height={48}
+                            unoptimized
+                            className="w-full h-full object-cover"
                           />
                         </div>
                         <div>

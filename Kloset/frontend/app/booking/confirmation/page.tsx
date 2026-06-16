@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -39,8 +39,8 @@ function ConfirmationContent() {
       router.push('/discover');
       return;
     }
-    const init = async () => { await loadBooking(); };
-    init();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadBooking();
   }, [bookingId]);
 
   if (loading) {
@@ -87,9 +87,9 @@ function ConfirmationContent() {
             >
               <Card padding="md" className="bg-white border-border">
                 <div className="flex gap-4">
-                  <div className="w-20 h-24 rounded-lg overflow-hidden bg-ivory-dark flex-shrink-0 relative">
+                  <div className="w-20 h-24 rounded-lg overflow-hidden bg-ivory-dark flex-shrink-0">
                     {booking.outfit?.images?.[0] ? (
-                      <Image src={booking.outfit.images[0].url} alt="" fill sizes="80px" className="object-cover" />
+                      <Image src={booking.outfit.images[0].url} alt="" width={80} height={96} unoptimized className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-[8px] text-charcoal-light/40">No Image</div>
                     )}

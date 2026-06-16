@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MessageSquare, Search, Send, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,7 +14,6 @@ export default function SellerInboxPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
@@ -40,36 +39,38 @@ export default function SellerInboxPage() {
   };
 
   useEffect(() => {
-    const init = async () => { await loadConversations(); };
+    const init = async () => {
+      setLoading(true);
+      try {
+        const convs = await messagingAPI.getConversations();
+        setConversations(convs);
+      } catch {
+        setConversations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     init();
   }, []);
 
   useEffect(() => {
-    if (!activeChat) {
-      const clearMessages = () => { setMessages([]); };
-      void clearMessages();
-      return;
+    if (activeChat) {
+      const init = async () => {
+        try {
+          const msgs = await messagingAPI.getMessages(activeChat);
+          setMessages(msgs);
+        } catch {
+          setMessages([]);
+        }
+      };
+      init();
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMessages([]);
     }
-
-    const init = async () => {
-      try {
-        const msgs = await messagingAPI.getMessages(activeChat);
-        setMessages(msgs);
-      } catch {
-        setMessages([]);
-      }
-    };
-    init();
   }, [activeChat]);
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
-
-  const filteredConversations = searchTerm
-    ? conversations.filter((c) =>
-        c.participant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.last_message.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : conversations;
 
   const handleSend = async () => {
     if (!messageText.trim() || !activeChat) return;
@@ -104,21 +105,20 @@ export default function SellerInboxPage() {
         <div className="md:col-span-4 space-y-2">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-light" size={14} />
-            <input type="text" placeholder="Search conversations..." value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+            <input type="text" placeholder="Search conversations..."
               className="w-full h-[44px] pl-10 pr-4 text-xs font-sans bg-white border border-border rounded outline-none focus:border-champagne" />
           </div>
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => <div key={i} className="shimmer h-16 rounded bg-ivory-dark animate-pulse" />)}
             </div>
-          ) : filteredConversations.length === 0 ? (
+          ) : conversations.length === 0 ? (
             <div className="p-4 text-center text-xs text-charcoal-light">
-              <Search size={20} className="mx-auto mb-2 text-champagne" />
-              <p>No conversations match your search.</p>
+              <MessageSquare size={20} className="mx-auto mb-2 text-champagne" />
+              <p>No conversations yet.</p>
             </div>
           ) : (
-            filteredConversations.map((conv) => (
+            conversations.map((conv) => (
               <button key={conv.id} onClick={() => setActiveChat(conv.id)}
                 className={`w-full p-4 rounded-lg border text-left transition-colors cursor-pointer ${
                   activeChat === conv.id ? 'border-champagne bg-champagne/5' : 'border-border bg-white hover:border-champagne/40'

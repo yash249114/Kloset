@@ -39,16 +39,13 @@ export default function SellerListingsPage() {
   const [category, setCategory] = useState<OutfitCategory>('lehenga');
   const [fabric, setFabric] = useState('');
   const [selectedSizes, setSelectedSizes] = useState<string[]>(['M']);
-  const [occasions, setOccasions] = useState<string[]>([]);
-  const [colors, setColors] = useState<string[]>([]);
-  const [accessories, setAccessories] = useState<string[]>([]);
   const [price1Day, setPrice1Day] = useState(1500);
   const [price3Day, setPrice3Day] = useState(3000);
   const [price7Day, setPrice7Day] = useState(5000);
   const [deposit, setDeposit] = useState(4000);
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [pincode, setPincode] = useState('');
+  const [city, setCity] = useState('Mumbai');
+  const [state, setState] = useState('Maharashtra');
+  const [pincode, setPincode] = useState('400001');
   const [delivery, setDelivery] = useState(true);
   const [deliveryFee, setDeliveryFee] = useState(200);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
@@ -84,16 +81,10 @@ export default function SellerListingsPage() {
     setCategory('lehenga');
     setFabric('');
     setSelectedSizes(['M']);
-    setOccasions([]);
-    setColors([]);
-    setAccessories([]);
     setPrice1Day(1500);
     setPrice3Day(3000);
     setPrice7Day(5000);
     setDeposit(4000);
-    setCity('');
-    setState('');
-    setPincode('');
     setDelivery(true);
     setDeliveryFee(200);
     setUploadedImages([]);
@@ -106,9 +97,6 @@ export default function SellerListingsPage() {
     setCategory(item.category);
     setFabric(item.fabric || '');
     setSelectedSizes(item.sizes || ['M']);
-    setOccasions(item.occasions || []);
-    setColors(item.colors || []);
-    setAccessories(item.accessories_included || []);
     setPrice1Day(item.price_1day || 1500);
     setPrice3Day(item.price_3day || 3000);
     setPrice7Day(item.price_7day || 5000);
@@ -118,7 +106,6 @@ export default function SellerListingsPage() {
     setUploadedImages(item.images?.map((img, idx) => ({ url: img.url, cloudinary_id: img.id, is_primary: img.is_primary, sort_order: img.sort_order ?? idx })) || []);
     setCity(item.city || '');
     setState(item.state || '');
-    setPincode(item.pincode || '');
     setIsEditModalOpen(true);
   };
 
@@ -133,9 +120,9 @@ export default function SellerListingsPage() {
         category,
         fabric,
         sizes: selectedSizes,
-        occasions,
-        colors,
-        accessories_included: accessories,
+        occasions: ['wedding', 'reception'],
+        colors: ['Gold', 'Ivory'],
+        accessories_included: [] as string[],
         city,
         state,
         pincode,
@@ -177,9 +164,9 @@ export default function SellerListingsPage() {
         category,
         fabric,
         sizes: selectedSizes,
-        occasions,
-        colors,
-        accessories_included: accessories,
+        occasions: ['wedding', 'reception'],
+        colors: ['Gold', 'Ivory'],
+        accessories_included: [] as string[],
         city,
         state,
         pincode,
@@ -408,42 +395,6 @@ export default function SellerListingsPage() {
               onChange={(e) => setFabric(e.target.value)}
               required
             />
-            <div className="sm:col-span-2">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-charcoal-light font-bold block mb-1">
-                Occasions (comma separated)
-              </label>
-              <input
-                type="text"
-                value={occasions.join(', ')}
-                onChange={(e) => setOccasions(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                className="w-full h-[52px] px-4 border border-border bg-warm-white rounded outline-none text-xs font-sans text-charcoal focus:border-champagne"
-                placeholder="e.g. wedding, reception, engagement, sangeet"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-charcoal-light font-bold block mb-1">
-                Colors (comma separated)
-              </label>
-              <input
-                type="text"
-                value={colors.join(', ')}
-                onChange={(e) => setColors(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                className="w-full h-[52px] px-4 border border-border bg-warm-white rounded outline-none text-xs font-sans text-charcoal focus:border-champagne"
-                placeholder="e.g. Gold, Ivory, Red, Maroon"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-charcoal-light font-bold block mb-1">
-                Accessories Included (comma separated)
-              </label>
-              <input
-                type="text"
-                value={accessories.join(', ')}
-                onChange={(e) => setAccessories(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                className="w-full h-[52px] px-4 border border-border bg-warm-white rounded outline-none text-xs font-sans text-charcoal focus:border-champagne"
-                placeholder="e.g. dupatta, blouse, jewelry, potli bag"
-              />
-            </div>
           </div>
 
           {/* Sizing options */}
@@ -638,42 +589,6 @@ export default function SellerListingsPage() {
               onChange={(e) => setFabric(e.target.value)}
               required
             />
-            <div className="sm:col-span-2">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-charcoal-light font-bold block mb-1">
-                Occasions (comma separated)
-              </label>
-              <input
-                type="text"
-                value={occasions.join(', ')}
-                onChange={(e) => setOccasions(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                className="w-full h-[52px] px-4 border border-border bg-warm-white rounded outline-none text-xs font-sans text-charcoal focus:border-champagne"
-                placeholder="e.g. wedding, reception, engagement, sangeet"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-charcoal-light font-bold block mb-1">
-                Colors (comma separated)
-              </label>
-              <input
-                type="text"
-                value={colors.join(', ')}
-                onChange={(e) => setColors(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                className="w-full h-[52px] px-4 border border-border bg-warm-white rounded outline-none text-xs font-sans text-charcoal focus:border-champagne"
-                placeholder="e.g. Gold, Ivory, Red, Maroon"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-charcoal-light font-bold block mb-1">
-                Accessories Included (comma separated)
-              </label>
-              <input
-                type="text"
-                value={accessories.join(', ')}
-                onChange={(e) => setAccessories(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                className="w-full h-[52px] px-4 border border-border bg-warm-white rounded outline-none text-xs font-sans text-charcoal focus:border-champagne"
-                placeholder="e.g. dupatta, blouse, jewelry, potli bag"
-              />
-            </div>
           </div>
 
           <div className="space-y-2.5">

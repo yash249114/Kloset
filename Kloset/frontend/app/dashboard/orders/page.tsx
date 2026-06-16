@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -37,8 +37,8 @@ export default function DashboardOrdersPage() {
       router.push('/auth/login?redirect=/dashboard/orders');
       return;
     }
-    const init = async () => { await loadBookings(); };
-    init();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadBookings();
   }, [isAuthenticated, authLoading]);
 
   const getStatusColor = (status: string) => {
@@ -85,9 +85,9 @@ export default function DashboardOrdersPage() {
               <motion.div key={booking.id} whileHover={{ y: -2 }} transition={springTransition}
                 className="bg-white border border-border rounded-xl p-5 flex items-start gap-4"
               >
-                <div className="w-16 h-20 rounded-lg overflow-hidden bg-ivory-dark flex-shrink-0 relative">
+                <div className="w-16 h-20 rounded-lg overflow-hidden bg-ivory-dark flex-shrink-0">
                   {booking.outfit?.images?.[0] ? (
-                    <Image src={booking.outfit.images[0].url} alt="" fill sizes="64px" className="object-cover" />
+                    <Image src={booking.outfit.images[0].url} alt="" width={64} height={80} unoptimized className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-[8px] text-charcoal-light/40">No Img</div>
                   )}

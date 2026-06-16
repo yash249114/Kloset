@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCcw, BarChart2, DollarSign, Users, Package, TrendingUp } from 'lucide-react';
 import { adminAPI, AdminStats } from '@/lib/api';
@@ -33,8 +33,8 @@ export default function AdminAnalyticsPage() {
   };
 
   useEffect(() => {
-    const init = async () => { await loadStats(); };
-    init();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadStats();
   }, []);
 
   const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };

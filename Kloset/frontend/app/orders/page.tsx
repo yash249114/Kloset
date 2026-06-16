@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 import { 
   Calendar, 
   ChevronRight, 
@@ -17,6 +17,8 @@ import {
   Undo2, 
   Inbox,
   XCircle,
+  CalendarPlus,
+  Receipt,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { bookingsAPI, reviewsAPI, disputesAPI } from '@/lib/api';
@@ -27,7 +29,6 @@ import Input from '@/components/ui/Input';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Modal from '@/components/ui/Modal';
-import { OrdersSkeleton } from '@/components/ui/Skeleton';
 
 // Status badge mapping helper
 const getStatusBadge = (status: BookingStatus) => {
@@ -78,11 +79,6 @@ export default function RenterOrdersPage() {
   const [disputeDesc, setDisputeDesc] = useState('');
   const [submittingDispute, setSubmittingDispute] = useState(false);
 
-  // Cancel Modal State
-  const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<Booking | null>(null);
-  const [cancelReason, setCancelReason] = useState('');
-  const [submittingCancel, setSubmittingCancel] = useState(false);
-
   const loadOrders = async () => {
     if (!isAuthenticated) return;
     setLoading(true);
@@ -103,8 +99,8 @@ export default function RenterOrdersPage() {
       return;
     }
 
-    const load = async () => { await loadOrders(); };
-    load();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadOrders();
   }, [isAuthenticated, authLoading]);
 
   const handleUpdateStatus = async (bookingId: string, nextStatus: BookingStatus) => {
@@ -120,6 +116,10 @@ export default function RenterOrdersPage() {
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBookingForReview) return;
+    if (!['returned', 'completed'].includes(selectedBookingForReview.status)) {
+      toast.error('Reviews can only be submitted for returned or completed bookings.');
+      return;
+    }
     
     setSubmittingReview(true);
     try {
@@ -143,6 +143,10 @@ export default function RenterOrdersPage() {
   const handleSubmitDispute = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBookingForDispute) return;
+    if (['completed', 'cancelled', 'disputed'].includes(selectedBookingForDispute.status)) {
+      toast.error('Cannot raise a dispute for a completed, cancelled, or already disputed booking.');
+      return;
+    }
     if (!disputeReason.trim() || !disputeDesc.trim()) {
       toast.error('Please fill in both dispute reason and incident context.');
       return;
@@ -167,24 +171,6 @@ export default function RenterOrdersPage() {
     }
   };
 
-  const handleCancelBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedBookingForCancel) return;
-
-    setSubmittingCancel(true);
-    try {
-      await bookingsAPI.cancel(selectedBookingForCancel.id, cancelReason.trim() || undefined);
-      toast.success('Booking cancelled successfully. Refund will be processed per policy.');
-      setSelectedBookingForCancel(null);
-      setCancelReason('');
-      loadOrders();
-    } catch {
-      toast.error('Failed to cancel booking. It may be too late to cancel.');
-    } finally {
-      setSubmittingCancel(false);
-    }
-  };
-
   const filteredBookings = bookings.filter((booking) => {
     if (activeTab === 'active') {
       return !['completed', 'cancelled', 'disputed'].includes(booking.status);
@@ -196,7 +182,12 @@ export default function RenterOrdersPage() {
   });
 
   if (authLoading || loading) {
-    return <OrdersSkeleton />;
+    return (
+      <div className="bg-ivory min-h-screen pt-36 text-center select-none font-mono text-xs text-charcoal-light">
+        <div className="animate-spin inline-block w-6 h-6 border-2 border-champagne rounded-full border-t-transparent mb-2" />
+        <p>Retrieving Escrow Booking Registry...</p>
+      </div>
+    );
   }
 
   return (
@@ -285,7 +276,14 @@ export default function RenterOrdersPage() {
                     {/* Garment Image */}
                     <div className="w-full md:w-32 aspect-[3/4] rounded-lg border border-border overflow-hidden bg-ivory-dark flex-shrink-0 relative">
                       {booking.outfit?.images?.[0] ? (
-                        <Image src={booking.outfit.images[0].url} alt="Garment Thumbnail" fill sizes="(max-width: 768px) 100vw, 128px" className="object-cover" />
+                        <Image 
+                          src={booking.outfit.images[0].url} 
+                          alt="Garment Thumbnail" 
+                          width={128}
+                          height={170}
+                          unoptimized
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[10px] font-mono text-charcoal-light/40">No Image</div>
                       )}
@@ -345,7 +343,53 @@ export default function RenterOrdersPage() {
                       {/* Action buttons inside the item layout */}
                       <div className="flex flex-wrap gap-3 pt-2">
                         
-                        {/* 1. Mark booking picked up */}
+                        {/* 1. Cancel Order (available for pending/confirmed statuses) */}
+                        {['pending', 'confirmed'].includes(booking.status) && (
+                          <Button
+                            variant="outline"
+                            onClick={async () => {
+                              if (!confirm('Are you sure you want to cancel this booking?')) return;
+                              try {
+                                await bookingsAPI.cancel(booking.id);
+                                toast.success('Booking cancelled successfully.');
+                                loadOrders();
+                              } catch {
+                                toast.error('Failed to cancel booking.');
+                              }
+                            }}
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider border-red-200 text-error hover:bg-red-50 hover:border-red-400 cursor-pointer"
+                          >
+                            <XCircle size={12} className="mr-1" /> Cancel Order
+                          </Button>
+                        )}
+
+                        {/* 2. Extend Rental (available for confirmed/picked_up/in_use statuses) */}
+                        {['confirmed', 'picked_up', 'in_use'].includes(booking.status) && (
+                          <Button
+                            variant="outline"
+                            onClick={async () => {
+                              const days = prompt('How many extra days would you like to extend?', '3');
+                              if (!days) return;
+                              const extraDays = parseInt(days);
+                              if (isNaN(extraDays) || extraDays < 1) {
+                                toast.error('Please enter a valid number of days.');
+                                return;
+                              }
+                              try {
+                                await bookingsAPI.extend(booking.id, extraDays);
+                                toast.success(`Rental extended by ${extraDays} day(s).`);
+                                loadOrders();
+                              } catch {
+                                toast.error('Failed to extend rental.');
+                              }
+                            }}
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-400 cursor-pointer"
+                          >
+                            <CalendarPlus size={12} className="mr-1" /> Extend Rental
+                          </Button>
+                        )}
+
+                        {/* 3. Mark booking picked up */}
                         {booking.status === 'confirmed' && (
                           <Button
                             variant="primary"
@@ -356,7 +400,7 @@ export default function RenterOrdersPage() {
                           </Button>
                         )}
 
-                        {/* 2. Transition from picked_up to in_use */}
+                        {/* 4. Transition from picked_up to in_use */}
                         {booking.status === 'picked_up' && (
                           <Button
                             variant="gold"
@@ -367,7 +411,7 @@ export default function RenterOrdersPage() {
                           </Button>
                         )}
 
-                        {/* 3. Initiate return from in_use */}
+                        {/* 5. Initiate return from in_use */}
                         {booking.status === 'in_use' && (
                           <Button
                             variant="primary"
@@ -378,10 +422,22 @@ export default function RenterOrdersPage() {
                           </Button>
                         )}
 
-                        {/* 4. Complete / Review option */}
+                        {/* 6. View Receipt (available for completed/cancelled/disputed bookings) */}
+                        {['completed', 'returned', 'cancelled', 'disputed'].includes(booking.status) && (
+                          <Button
+                            variant="outline"
+                            onClick={() => toast.info(`Receipt for booking ${booking.booking_ref} — opening payment details.`)}
+                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider border-charcoal-light text-charcoal-light hover:bg-ivory-dark cursor-pointer"
+                          >
+                            <Receipt size={12} className="mr-1" /> View Receipt
+                          </Button>
+                        )}
+
+                        {/* 7. Complete / Review option */}
                         {(booking.status === 'returned' || booking.status === 'completed') && (
                           <Button
                             variant="gold"
+                            disabled={!['returned', 'completed'].includes(booking.status)}
                             onClick={() => setSelectedBookingForReview(booking)}
                             className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider cursor-pointer"
                           >
@@ -389,25 +445,15 @@ export default function RenterOrdersPage() {
                           </Button>
                         )}
 
-                        {/* 5. Raising dispute ticket */}
+                        {/* 8. Raising dispute ticket */}
                         {!['completed', 'cancelled', 'disputed'].includes(booking.status) && (
                           <Button
                             variant="outline"
+                            disabled={['completed', 'cancelled', 'disputed'].includes(booking.status)}
                             onClick={() => setSelectedBookingForDispute(booking)}
                             className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider border-red-200 text-error hover:bg-red-50 hover:border-red-400 cursor-pointer"
                           >
                             <ShieldAlert size={12} className="mr-1" /> Dispute Escrow Funds
-                          </Button>
-                        )}
-
-                        {/* 6. Cancel booking */}
-                        {['pending', 'confirmed'].includes(booking.status) && (
-                          <Button
-                            variant="outline"
-                            onClick={() => setSelectedBookingForCancel(booking)}
-                            className="h-[52px] text-[10px] px-4 font-mono font-bold uppercase tracking-wider border-red-200 text-error hover:bg-red-50 hover:border-red-400 cursor-pointer"
-                          >
-                            <XCircle size={12} className="mr-1" /> Cancel Booking
                           </Button>
                         )}
 
@@ -550,69 +596,6 @@ export default function RenterOrdersPage() {
                   className="h-[52px] text-[10px] px-6 bg-error border-error hover:bg-red-700 hover:border-red-700 text-white"
                 >
                   Lock Escrow Funds
-                </Button>
-              </div>
-            </form>
-          )}
-        </Modal>
-
-        {/* ─── MODAL 3: CANCEL BOOKING DIALOG ─── */}
-        <Modal
-          isOpen={selectedBookingForCancel !== null}
-          onClose={() => { setSelectedBookingForCancel(null); setCancelReason(''); }}
-          title="Cancel Booking"
-        >
-          {selectedBookingForCancel && (
-            <form onSubmit={handleCancelBooking} className="space-y-6 text-left">
-              <div className="p-4 border border-red-100 bg-red-50 text-error text-[10px] font-mono rounded leading-normal flex items-start gap-2.5">
-                <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-bold uppercase mb-0.5">cancellation policy</p>
-                  <p>Free cancellation is available up to 7 days before your rental pickup date. Within 7 days, a 50% cancellation fee applies. This action cannot be undone.</p>
-                </div>
-              </div>
-
-              <div className="p-4 border border-border/60 bg-[#FAF9F6] rounded-lg">
-                <span className="text-[9px] font-mono text-charcoal-light uppercase font-bold block mb-1">Booking Being Cancelled</span>
-                <p className="text-sm font-semibold text-charcoal">{selectedBookingForCancel.outfit?.title || 'Garment Rental'}</p>
-                <p className="text-[10px] font-mono text-charcoal-light mt-0.5">Ref: {selectedBookingForCancel.booking_ref}</p>
-                <p className="text-xs font-mono font-bold text-charcoal mt-1">₹{selectedBookingForCancel.total_amount.toLocaleString('en-IN')}</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-mono tracking-widest text-charcoal-light uppercase font-bold block mb-1">
-                  Cancellation Reason (Optional)
-                </label>
-                <select
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full h-[48px] px-4 text-xs font-sans bg-white border border-border rounded focus:outline-none focus:border-champagne"
-                >
-                  <option value="">Select a reason</option>
-                  <option value="changed_mind">Changed my mind</option>
-                  <option value="found_alternative">Found an alternative</option>
-                  <option value="event_cancelled">Event cancelled</option>
-                  <option value="budget">Budget constraints</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-2 justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => { setSelectedBookingForCancel(null); setCancelReason(''); }}
-                  className="h-[52px] text-[10px] px-4"
-                >
-                  Keep Booking
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  isLoading={submittingCancel}
-                  className="h-[52px] text-[10px] px-6 bg-error border-error hover:bg-red-700 hover:border-red-700 text-white cursor-pointer"
-                >
-                  Confirm Cancellation
                 </Button>
               </div>
             </form>

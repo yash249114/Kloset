@@ -143,6 +143,31 @@ func (h *Handler) Cancel(c *fiber.Ctx) error {
 	return response.Success(c, "Booking cancelled successfully", nil)
 }
 
+func (h *Handler) Extend(c *fiber.Ctx) error {
+	userID, ok := c.Locals("user_id").(string)
+	if !ok {
+		return response.Unauthorized(c, "Authentication required")
+	}
+
+	id := c.Params("id")
+
+	var req ExtendBookingRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+
+	if err := h.validate.Struct(req); err != nil {
+		return response.BadRequest(c, "Validation failed: "+err.Error())
+	}
+
+	booking, err := h.service.Extend(id, userID, req.ExtraDays)
+	if err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Success(c, "Booking extended successfully", booking)
+}
+
 func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handler) {
 	bookings := router.Group("/bookings", authMiddleware)
 	bookings.Post("/", h.Create)
@@ -151,4 +176,5 @@ func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handl
 	bookings.Get("/:id", h.GetByID)
 	bookings.Patch("/:id/status", h.UpdateStatus)
 	bookings.Post("/:id/cancel", h.Cancel)
+	bookings.Patch("/:id/extend", h.Extend)
 }

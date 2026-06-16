@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -35,26 +35,16 @@ function CheckoutContent() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push(`/auth/login?redirect=/booking/checkout${outfitId ? `?outfit_id=${outfitId}` : ''}`);
-      return;
-    }
-  }, [isAuthenticated, authLoading, outfitId]);
-
   const loadCheckoutData = async () => {
     setLoading(true);
     try {
       const id = outfitId || (cartItems.length > 0 ? cartItems[0].id : null);
-      if (!id) {
-        toast.error('No outfit selected for checkout.');
-        router.push('/cart');
-        return;
-      }
-      const outfitData = await outfitsAPI.getById(id);
-      setOutfit(outfitData);
-      if (outfitData.sizes && outfitData.sizes.length > 0) {
-        setSelectedSize(outfitData.sizes[0]);
+      if (id) {
+        const outfitData = await outfitsAPI.getById(id);
+        setOutfit(outfitData);
+        if (outfitData.sizes && outfitData.sizes.length > 0) {
+          setSelectedSize(outfitData.sizes[0]);
+        }
       }
       if (user) {
         const { userAPI } = await import('@/lib/api');
@@ -71,10 +61,12 @@ function CheckoutContent() {
   };
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      const init = async () => { await loadCheckoutData(); };
-      init();
+    if (!authLoading && !isAuthenticated) {
+      router.push(`/auth/login?redirect=/booking/checkout${outfitId ? `?outfit_id=${outfitId}` : ''}`);
+      return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadCheckoutData();
   }, [isAuthenticated, authLoading, outfitId]);
 
   const handlePlaceOrder = async () => {
@@ -83,19 +75,32 @@ function CheckoutContent() {
       toast.error('Please select rental dates.');
       return;
     }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (start < today) {
+      toast.error('Pickup date cannot be in the past.');
+      return;
+    }
+    if (end <= start) {
+      toast.error('Return date must be after pickup date.');
+      return;
+    }
     if (deliveryType === 'delivery' && !selectedAddress) {
       toast.error('Please select a delivery address.');
       return;
     }
     setProcessing(true);
     try {
+      const selectedAddr = deliveryType === 'delivery' ? addresses.find((a) => a.id === selectedAddress) : undefined;
       const booking = await bookingsAPI.create({
         outfit_id: outfit.id,
         pickup_date: startDate,
         return_date: endDate,
         size_selected: selectedSize,
         delivery_type: deliveryType,
-        delivery_address_id: deliveryType === 'delivery' ? selectedAddress : undefined,
+        delivery_address: selectedAddr ? JSON.stringify(selectedAddr) : undefined,
       });
 
       const razorpayOrderId = booking.razorpay_order_id;
@@ -128,11 +133,11 @@ function CheckoutContent() {
       });
 
       if (result.status === 'success') {
-        const paymentResp = result.response as unknown as Record<string, string>;
+        const paymentResp = result.response as { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
         await paymentsAPI.verify({
           razorpay_order_id: razorpayOrderId,
-          razorpay_payment_id: paymentResp.razorpay_payment_id ?? '',
-          razorpay_signature: paymentResp.razorpay_signature ?? '',
+          razorpay_payment_id: paymentResp.razorpay_payment_id,
+          razorpay_signature: paymentResp.razorpay_signature,
         });
         clearCart();
         toast.success('Payment confirmed! Booking is complete.');
@@ -160,6 +165,17 @@ function CheckoutContent() {
     const delivery = deliveryType === 'delivery' ? (outfit.delivery_fee || 150) : 0;
     return rentalAmount + delivery + (outfit.security_deposit || 2000);
   };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split('T')[0];
+  const maxPickup = new Date(today);
+  maxPickup.setDate(maxPickup.getDate() + 30);
+  const maxPickupStr = maxPickup.toISOString().split('T')[0];
+  const minReturnStr = startDate || todayStr;
+  const maxReturn = new Date(today);
+  maxReturn.setDate(maxReturn.getDate() + 90);
+  const maxReturnStr = maxReturn.toISOString().split('T')[0];
 
   if (authLoading || loading) {
     return (
@@ -198,8 +214,8 @@ function CheckoutContent() {
               >
                 <Card padding="md" className="bg-white border-border">
                   <div className="flex gap-4">
-                    <div className="w-24 h-32 rounded-lg overflow-hidden bg-ivory-dark flex-shrink-0 relative">
-                      <Image src={outfit.images?.[0]?.url || ''} alt={outfit.title} fill sizes="96px" className="object-cover" />
+                    <div className="w-24 h-32 rounded-lg overflow-hidden bg-ivory-dark flex-shrink-0">
+                       <Image src={outfit.images?.[0]?.url || ''} alt={outfit.title} width={80} height={107} unoptimized className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <Badge variant="gold">{outfit.category}</Badge>
@@ -225,11 +241,13 @@ function CheckoutContent() {
                   <div className="space-y-1">
                     <label className="text-[10px] font-mono text-charcoal-light uppercase font-bold block">Pickup Date</label>
                     <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                      min={todayStr} max={maxPickupStr}
                       className="w-full h-[48px] px-4 text-xs font-sans bg-warm-white border border-border rounded outline-none focus:border-champagne" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-mono text-charcoal-light uppercase font-bold block">Return Date</label>
                     <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+                      min={minReturnStr} max={maxReturnStr}
                       className="w-full h-[48px] px-4 text-xs font-sans bg-warm-white border border-border rounded outline-none focus:border-champagne" />
                   </div>
                 </div>

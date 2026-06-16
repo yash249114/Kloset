@@ -94,30 +94,30 @@ func (r *Repository) DeleteUserRefreshTokens(userID uuid.UUID) error {
 	return r.db.Where("user_id = ?", userID).Delete(&RefreshToken{}).Error
 }
 
-// StorePasswordResetToken saves a new password reset token
+// StorePasswordResetToken saves a password reset token
 func (r *Repository) StorePasswordResetToken(token *PasswordResetToken) error {
 	return r.db.Create(token).Error
 }
 
-// FindPasswordResetToken finds a valid, unused password reset token by its hash
-func (r *Repository) FindPasswordResetToken(tokenHash string) (*PasswordResetToken, error) {
-	var token PasswordResetToken
-	err := r.db.Where("token_hash = ? AND used = false AND expires_at > NOW()", tokenHash).First(&token).Error
+// FindPasswordResetToken finds a password reset token by token value
+func (r *Repository) FindPasswordResetToken(token string) (*PasswordResetToken, error) {
+	var t PasswordResetToken
+	err := r.db.Where("token = ? AND used = false AND expires_at > NOW()", token).First(&t).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &token, nil
+	return &t, nil
 }
 
-// MarkPasswordResetTokenUsed marks a reset token as used
-func (r *Repository) MarkPasswordResetTokenUsed(id uuid.UUID) error {
-	return r.db.Model(&PasswordResetToken{}).Where("id = ?", id).Update("used", true).Error
+// MarkPasswordResetTokenAsUsed marks a password reset token as used
+func (r *Repository) MarkPasswordResetTokenAsUsed(tokenID uuid.UUID) error {
+	return r.db.Model(&PasswordResetToken{}).Where("id = ?", tokenID).Update("used", true).Error
 }
 
-// InvalidatePasswordResetTokens marks all existing tokens for an email as used
-func (r *Repository) InvalidatePasswordResetTokens(email string) error {
-	return r.db.Model(&PasswordResetToken{}).Where("email = ? AND used = false", email).Update("used", true).Error
+// CleanupExpiredPasswordResetTokens removes expired password reset tokens
+func (r *Repository) CleanupExpiredPasswordResetTokens() error {
+	return r.db.Where("expires_at <= NOW()").Delete(&PasswordResetToken{}).Error
 }

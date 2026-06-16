@@ -22,7 +22,7 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-// Register handles POST /auth/register (returns user + requires OTP verification)
+// Register handles POST /auth/register
 func (h *Handler) Register(c *fiber.Ctx) error {
 	var req RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -33,16 +33,13 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	user, err := h.service.Register(&req, c.IP())
+	result, err := h.service.Register(&req)
 	if err != nil {
 		return response.Conflict(c, err.Error())
 	}
 
-	return response.Created(c, "Account created. Please verify your email.", RegisterResponse{
-		User:        *user,
-		RequiresOTP: true,
-		Message:     "A 6-digit verification code has been sent to your email.",
-	})
+	h.setAuthCookies(c, result.AccessToken, result.RefreshToken)
+	return response.Created(c, "Account created successfully", result)
 }
 
 // Login handles POST /auth/login
@@ -56,7 +53,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	result, err := h.service.Login(&req, c.IP())
+	result, err := h.service.Login(&req)
 	if err != nil {
 		return response.Unauthorized(c, err.Error())
 	}
@@ -126,7 +123,7 @@ func (h *Handler) GoogleLogin(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	result, err := h.service.GoogleLogin(&req, c.IP())
+	result, err := h.service.GoogleLogin(&req)
 	if err != nil {
 		return response.Unauthorized(c, err.Error())
 	}
@@ -177,45 +174,6 @@ func (h *Handler) VerifyOTP(c *fiber.Ctx) error {
 	return response.Success(c, "Phone number verified successfully", nil)
 }
 
-// SendEmailOTP handles POST /auth/otp/email/send
-func (h *Handler) SendEmailOTP(c *fiber.Ctx) error {
-	var req SendEmailOTPRequest
-	if err := c.BodyParser(&req); err != nil {
-		return response.BadRequest(c, "Invalid request body")
-	}
-
-	if err := h.validate.Struct(req); err != nil {
-		return response.BadRequest(c, "Validation failed: "+err.Error())
-	}
-
-	err := h.service.SendEmailOTP(req.Email)
-	if err != nil {
-		return response.BadRequest(c, err.Error())
-	}
-
-	return response.Success(c, "Verification code sent to your email", nil)
-}
-
-// VerifyEmailOTP handles POST /auth/otp/email/verify
-func (h *Handler) VerifyEmailOTP(c *fiber.Ctx) error {
-	var req VerifyEmailOTPRequest
-	if err := c.BodyParser(&req); err != nil {
-		return response.BadRequest(c, "Invalid request body")
-	}
-
-	if err := h.validate.Struct(req); err != nil {
-		return response.BadRequest(c, "Validation failed: "+err.Error())
-	}
-
-	result, err := h.service.VerifyEmailOTP(req.Email, req.Code, c.IP())
-	if err != nil {
-		return response.BadRequest(c, err.Error())
-	}
-
-	h.setAuthCookies(c, result.AccessToken, result.RefreshToken)
-	return response.Success(c, "Email verified successfully", result)
-}
-
 // ForgotPassword handles POST /auth/forgot-password
 func (h *Handler) ForgotPassword(c *fiber.Ctx) error {
 	var req ForgotPasswordRequest
@@ -227,11 +185,16 @@ func (h *Handler) ForgotPassword(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	if err := h.service.ForgotPassword(&req, c.IP()); err != nil {
-		return response.InternalError(c, err.Error())
+	token, err := h.service.ForgotPassword(req.Email)
+	if err != nil {
+		return response.InternalError(c, "Failed to process password reset request")
 	}
 
-	return response.Success(c, "If your email is registered, you will receive a password reset link.", nil)
+	// In production, send email with reset link
+	// For testing, return the token in response
+	return response.Success(c, "If the email exists, a password reset link has been sent", fiber.Map{
+		"token": token,
+	})
 }
 
 // ResetPassword handles POST /auth/reset-password
@@ -245,11 +208,11 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	if err := h.service.ResetPassword(&req, c.IP()); err != nil {
+	if err := h.service.ResetPassword(req.Token, req.NewPassword); err != nil {
 		return response.BadRequest(c, err.Error())
 	}
 
-	return response.Success(c, "Password has been reset successfully. Please log in with your new password.", nil)
+	return response.Success(c, "Password has been reset successfully", nil)
 }
 
 // RegisterRoutes sets up auth routes
@@ -260,13 +223,11 @@ func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handl
 	auth.Post("/google", h.GoogleLogin)
 	auth.Post("/otp/send", h.SendOTP)
 	auth.Post("/otp/verify", h.VerifyOTP)
-	auth.Post("/otp/email/send", h.SendEmailOTP)
-	auth.Post("/otp/email/verify", h.VerifyEmailOTP)
 	auth.Post("/refresh", h.Refresh)
-	auth.Post("/forgot-password", h.ForgotPassword)
-	auth.Post("/reset-password", h.ResetPassword)
 	auth.Post("/logout", authMiddleware, h.Logout)
 	auth.Get("/me", authMiddleware, h.Me)
+	auth.Post("/forgot-password", h.ForgotPassword)
+	auth.Post("/reset-password", h.ResetPassword)
 }
 
 func (h *Handler) setAuthCookies(c *fiber.Ctx, accessToken, refreshToken string) {

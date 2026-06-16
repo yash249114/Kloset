@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Star, RefreshCcw, X, Check } from 'lucide-react';
 import { adminAPI, AdminUserEntry } from '@/lib/api';
@@ -29,8 +29,8 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    const init = async () => { await loadUsers(); };
-    init();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadUsers();
   }, []);
 
   const toggleBan = async (userId: string, name: string, currentlyBanned: boolean) => {

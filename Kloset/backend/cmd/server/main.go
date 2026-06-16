@@ -21,6 +21,7 @@ import (
 	"github.com/kloset/backend/internal/logging"
 	"github.com/kloset/backend/internal/middleware"
 	"github.com/kloset/backend/internal/monitoring"
+	"github.com/kloset/backend/internal/messaging"
 	"github.com/kloset/backend/internal/notification"
 	"github.com/kloset/backend/internal/outfit"
 	"github.com/kloset/backend/internal/payment"
@@ -72,32 +73,16 @@ func main() {
 		&logging.SystemLog{},
 		&email.EmailLog{},
 		&auth.OTPVerification{},
-		&auth.EmailOTPVerification{},
 		&middleware.RateLimitEvent{},
 		&email.EmailQueue{},
 		&logging.AICache{},
 		&auth.User{},
-		&auth.PasswordResetToken{},
 		&user.UserAddress{},
+		&messaging.Message{},
+		&messaging.Conversation{},
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("GORM database auto-migration failed")
-	}
-
-	// Ensure platform_settings table exists (used by admin without a GORM model)
-	if err := db.Exec(`CREATE TABLE IF NOT EXISTS platform_settings (
-		id UUID PRIMARY KEY,
-		platform_take_rate NUMERIC DEFAULT 5.0,
-		gst_rate NUMERIC DEFAULT 8.0,
-		cleaning_fee NUMERIC DEFAULT 299,
-		min_rental_days INT DEFAULT 1,
-		max_rental_days INT DEFAULT 14,
-		security_deposit_multiplier NUMERIC DEFAULT 2.0,
-		auto_release_days INT DEFAULT 3,
-		created_at TIMESTAMPTZ DEFAULT NOW(),
-		updated_at TIMESTAMPTZ DEFAULT NOW()
-	)`).Error; err != nil {
-		log.Error().Err(err).Msg("Failed to create platform_settings table")
 	}
 
 
@@ -129,8 +114,18 @@ func main() {
 	app.Use(middleware.CORSMiddleware(cfg.App.FrontendURL))
 	app.Use(middleware.LoggerMiddleware())
 
-	// Security headers
-	app.Use(middleware.SecurityHeadersMiddleware(cfg.App.Env))
+	// Production security headers
+	app.Use(func(c *fiber.Ctx) error {
+		c.Set("X-Frame-Options", "DENY")
+		c.Set("X-Content-Type-Options", "nosniff")
+		c.Set("X-XSS-Protection", "1; mode=block")
+		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		if cfg.App.Env == "production" {
+			c.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
+		return c.Next()
+	})
 
 	// Rate limiting
 	app.Use(middleware.RateLimiter(db, 100, time.Minute))
@@ -170,7 +165,7 @@ func main() {
 
 	// ─── Auth Module ───────────────────────────
 	authRepo := auth.NewRepository(db)
-	authService := auth.NewService(authRepo, cfg, notifService, logService, emailService)
+	authService := auth.NewService(authRepo, cfg, notifService, logService)
 	authHandler := auth.NewHandler(authService)
 
 	// ─── Outfit Module ─────────────────────────
@@ -206,6 +201,10 @@ func main() {
 	adminService := admin.NewService(db, notifService, logService, cfg)
 	adminHandler := admin.NewHandler(adminService)
 
+	// ─── Messaging Module ───────────────────────
+	messagingService := messaging.NewService(db, userRepo, notifService, logService)
+	messagingHandler := messaging.NewHandler(messagingService)
+
 	// ─── Monitoring Module ─────────────────────
 	monitoringHandler := monitoring.NewHandler(db, cfg)
 
@@ -220,6 +219,7 @@ func main() {
 	disputeHandler.RegisterRoutes(api, authMw)
 	supportHandler.RegisterRoutes(api, authMw, adminMw)
 	adminHandler.RegisterRoutes(api, authMw, adminMw)
+	messagingHandler.RegisterRoutes(api, authMw)
 	monitoringHandler.RegisterRoutes(app, api, authMw, adminMw)
 
 	// ─── AI Module ────────────────────────────

@@ -26,8 +26,8 @@ export default function AdminSettingsPage() {
   };
 
   useEffect(() => {
-    const init = async () => { await loadSettings(); };
-    init();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadSettings();
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {

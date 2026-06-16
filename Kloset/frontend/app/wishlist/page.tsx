@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +12,6 @@ import { useAuthStore } from '@/store/useAuthStore';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-import { WishlistSkeleton } from '@/components/ui/Skeleton';
 
 export default function WishlistPage() {
   const router = useRouter();
@@ -28,12 +27,12 @@ export default function WishlistPage() {
     }
 
     if (isAuthenticated) {
-      const init = async () => { await fetchWishlist(); };
-      init();
+      fetchWishlist();
     }
   }, [isAuthenticated, authLoading]);
 
   const handleRemove = async (id: string, name: string) => {
+    if (!window.confirm(`Remove "${name}" from your wishlist?`)) return;
     try {
       await removeFromWishlist(id);
       toast.success(`Removed from wishlist: ${name}`);
@@ -60,7 +59,12 @@ export default function WishlistPage() {
   };
 
   if (authLoading || isLoading) {
-    return <WishlistSkeleton />;
+    return (
+      <div className="bg-ivory min-h-screen pt-36 text-center select-none font-mono text-xs text-charcoal-light">
+        <div className="animate-spin inline-block w-6 h-6 border-2 border-champagne rounded-full border-t-transparent mb-2" />
+        <p>Syncing Wishlist Registry...</p>
+      </div>
+    );
   }
 
   return (

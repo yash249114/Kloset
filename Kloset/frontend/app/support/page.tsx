@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Mail, Phone, ChevronRight, Plus, Clock, AlertCircle, Send } from 'lucide-react';
+import { MessageSquare, Mail, Phone, HelpCircle, ChevronRight, Plus, Clock, AlertCircle, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { supportAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -42,20 +42,20 @@ export default function SupportPage() {
     }
   };
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      const clear = () => { setLoading(false); };
-      void clear();
-      return;
-    }
-  }, [isAuthenticated, authLoading]);
+  const loadPublicFaq = () => {
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (isAuthenticated && !loading) {
-      const init = async () => { await loadTickets(); };
-      init();
+    if (!authLoading && !isAuthenticated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadPublicFaq();
+      return;
     }
-  }, [isAuthenticated, loading]);
+    if (isAuthenticated) {
+      loadTickets();
+    }
+  }, [isAuthenticated, authLoading]);
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,9 +104,10 @@ export default function SupportPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {[
-            { icon: MessageSquare, label: 'Live Chat', desc: 'Chat with our team', action: () => toast.info('Live chat coming soon.') },
+            { icon: MessageSquare, label: 'Live Chat', desc: 'Chat with our team', action: () => { toast.info('Opening live chat request...'); window.open('mailto:support@klosetluxe.com?subject=Live%20Chat%20Request'); } },
             { icon: Mail, label: 'Email Us', desc: 'support@klosetluxe.com', action: () => window.open('mailto:support@klosetluxe.com') },
-            { icon: Phone, label: 'Phone Support', desc: '+91 1800 123 4567', action: () => toast.info('Phone support available 9 AM - 9 PM IST.') },
+            { icon: Phone, label: 'Phone Support', desc: '+91 1800 123 4567', action: () => window.open('tel:+9118001234567') },
+            { icon: HelpCircle, label: 'View FAQ', desc: 'Browse common questions', action: () => window.location.href = '/#faq' },
           ].map((item) => (
             <motion.button
               key={item.label}

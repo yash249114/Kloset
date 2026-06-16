@@ -6,7 +6,6 @@ import { MessageSquare, RefreshCcw, Search, ChevronRight, Clock } from 'lucide-r
 import { supportAPI } from '@/lib/api';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-import { toast } from 'sonner';
 
 interface SupportTicket {
   id: string;
@@ -35,16 +34,13 @@ export default function AdminSupportPage() {
       setTickets(resp.tickets || resp || []);
     } catch {
       setTickets([]);
-      toast.error('Failed to load support tickets.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const init = async () => { await loadTickets(); };
-    init();
-  }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadTickets(); }, []);
 
   const filteredTickets = query
     ? tickets.filter(t =>

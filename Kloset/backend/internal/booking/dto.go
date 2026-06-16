@@ -16,3 +16,7 @@ type UpdateBookingStatusRequest struct {
 type CancelBookingRequest struct {
 	Reason string `json:"reason" validate:"required"`
 }
+
+type ExtendBookingRequest struct {
+	ExtraDays int `json:"extra_days" validate:"required,min=1"`
+}

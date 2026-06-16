@@ -112,7 +112,7 @@ func (u *User) ToUserResponse() UserResponse {
 	}
 }
 
-// OTPVerification represents the otp_verifications table (phone-based)
+// OTPVerification represents the otp_verifications table
 type OTPVerification struct {
 	Phone         string    `gorm:"size:50;primaryKey"`
 	Code          string    `gorm:"size:6;not null"`
@@ -128,35 +128,22 @@ func (OTPVerification) TableName() string {
 	return "otp_verifications"
 }
 
-// PasswordResetToken represents a password reset token stored in the database
+// PasswordResetToken represents the password_reset_tokens table
+// Used for email-based password reset functionality
+// Separate from OTPVerification which is phone-based
+
 type PasswordResetToken struct {
 	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	Email     string    `gorm:"size:255;not null;index"`
-	TokenHash string    `gorm:"size:64;not null;index"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	Token     string    `gorm:"size:255;not null;uniqueIndex"`
 	ExpiresAt time.Time `gorm:"not null"`
 	Used      bool      `gorm:"default:false"`
 	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 // TableName specifies the table name for PasswordResetToken
 func (PasswordResetToken) TableName() string {
 	return "password_reset_tokens"
-}
-
-// EmailOTPVerification represents the email_otp_verifications table
-type EmailOTPVerification struct {
-	Email         string    `gorm:"size:255;primaryKey"`
-	Code          string    `gorm:"size:6;not null"`
-	ExpiresAt     time.Time `gorm:"not null;column:expires_at"`
-	CooldownUntil time.Time `gorm:"not null;column:cooldown_until"`
-	Attempts      int       `gorm:"not null;default:0"`
-	SendCount     int       `gorm:"not null;default:0"`
-	WindowStart   time.Time `gorm:"not null;column:window_start"`
-	CreatedAt     time.Time `gorm:"column:created_at"`
-	UpdatedAt     time.Time `gorm:"column:updated_at"`
-}
-
-// TableName specifies the table name for EmailOTPVerification
-func (EmailOTPVerification) TableName() string {
-	return "email_otp_verifications"
 }

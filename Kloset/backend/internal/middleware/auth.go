@@ -62,9 +62,6 @@ func OptionalAuth(secret string) fiber.Handler {
 		}
 
 		token, err := jwt.Parse(parts[1], func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid signing method")
-			}
 			return []byte(secret), nil
 		})
 

@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"strconv"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/kloset/backend/pkg/response"
@@ -19,6 +21,16 @@ type ResolveDisputePayload struct {
 	Resolution   string  `json:"resolution" validate:"required,oneof=full_refund_renter full_release_seller split dismissed"`
 	Note         string  `json:"note" validate:"required"`
 	RefundAmount float64 `json:"refund_amount" validate:"min=0"`
+}
+
+type UpdateSettingsRequest struct {
+	PlatformTakeRate *float64 `json:"platform_take_rate" validate:"min=0,max=100"`
+	GSTRate          *float64 `json:"gst_rate" validate:"min=0,max=100"`
+	CleaningFee      *float64 `json:"cleaning_fee" validate:"min=0"`
+	MinRentalDays    *int     `json:"min_rental_days" validate:"min=1"`
+	MaxRentalDays    *int     `json:"max_rental_days" validate:"min=1"`
+	SecurityDepositMultiplier *float64 `json:"security_deposit_multiplier" validate:"min=0"`
+	AutoReleaseDays  *int     `json:"auto_release_days" validate:"min=0"`
 }
 
 func NewHandler(service *Service) *Handler {
@@ -148,76 +160,89 @@ func (h *Handler) BanUser(c *fiber.Ctx) error {
 	return response.Success(c, "User ban status toggled successfully", nil)
 }
 
-func (h *Handler) GetRevenueAnalytics(c *fiber.Ctx) error {
-	data, err := h.service.GetRevenueAnalytics()
+func (h *Handler) GetUsers(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
+	status := c.Query("status", "")
+	users, total, err := h.service.ListUsers(page, perPage, status)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
-	return response.Success(c, "Revenue analytics retrieved", data)
+	return response.Paginated(c, users, page, perPage, total)
 }
 
-func (h *Handler) ListBookings(c *fiber.Ctx) error {
-	page := c.QueryInt("page", 1)
-	perPage := c.QueryInt("per_page", 20)
-	status := c.Query("status")
-	data, total, err := h.service.ListBookings(page, perPage, status)
+func (h *Handler) GetSellers(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))	status := c.Query("status", "")
+	sellers, total, err := h.service.ListSellers(page, perPage, status)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
-	return response.Paginated(c, data, page, perPage, total)
+	return response.Paginated(c, sellers, page, perPage, total)
 }
 
-func (h *Handler) ListPayments(c *fiber.Ctx) error {
-	page := c.QueryInt("page", 1)
-	perPage := c.QueryInt("per_page", 20)
-	data, total, err := h.service.ListPayments(page, perPage)
+func (h *Handler) GetTransactions(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))	status := c.Query("status", "")
+	transactions, total, err := h.service.ListTransactions(page, perPage, status)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
-	return response.Paginated(c, data, page, perPage, total)
+	return response.Paginated(c, transactions, page, perPage, total)
 }
 
-func (h *Handler) ListAllUsers(c *fiber.Ctx) error {
-	users, err := h.service.ListAllUsers()
+func (h *Handler) GetBookings(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))	status := c.Query("status", "")
+	bookings, total, err := h.service.ListBookings(page, perPage, status)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
-	return response.Success(c, "Users list retrieved", users)
+	return response.Paginated(c, bookings, page, perPage, total)
 }
 
-func (h *Handler) ListAllSellers(c *fiber.Ctx) error {
-	sellers, err := h.service.ListAllSellers()
+func (h *Handler) GetPayments(c *fiber.Ctx) error {
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))	status := c.Query("status", "")
+	payments, total, err := h.service.ListPayments(page, perPage, status)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
-	return response.Success(c, "Sellers list retrieved", sellers)
+	return response.Paginated(c, payments, page, perPage, total)
 }
 
-func (h *Handler) ListAllTransactions(c *fiber.Ctx) error {
-	txs, err := h.service.ListAllTransactions()
-	if err != nil {
-		return response.InternalError(c, err.Error())
-	}
-	return response.Success(c, "Transactions list retrieved", txs)
-}
-
-func (h *Handler) GetPlatformSettings(c *fiber.Ctx) error {
-	settings, err := h.service.GetPlatformSettings()
+func (h *Handler) GetSettings(c *fiber.Ctx) error {
+	settings, err := h.service.GetSettings()
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
 	return response.Success(c, "Platform settings retrieved", settings)
 }
 
-func (h *Handler) UpdatePlatformSettings(c *fiber.Ctx) error {
-	var settings map[string]interface{}
-	if err := c.BodyParser(&settings); err != nil {
+func (h *Handler) UpdateSettings(c *fiber.Ctx) error {
+	var req UpdateSettingsRequest
+	if err := c.BodyParser(&req); err != nil {
 		return response.BadRequest(c, "Invalid request body")
 	}
-	if err := h.service.UpdatePlatformSettings(settings); err != nil {
-		return response.InternalError(c, err.Error())
+
+	if err := h.validate.Struct(req); err != nil {
+		return response.BadRequest(c, "Validation failed: "+err.Error())
+	}
+
+	if err := h.service.UpdateSettings(&req); err != nil {
+		return response.BadRequest(c, err.Error())
 	}
 	return response.Success(c, "Platform settings updated", nil)
+}
+
+func (h *Handler) GetAnalyticsRevenue(c *fiber.Ctx) error {
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	revenue, err := h.service.GetRevenueAnalytics(startDate, endDate)
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.Success(c, "Revenue analytics retrieved", revenue)
 }
 
 func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handler, adminMiddleware fiber.Handler) {
@@ -233,12 +258,12 @@ func (h *Handler) RegisterRoutes(router fiber.Router, authMiddleware fiber.Handl
 	admin.Get("/disputes", h.GetDisputes)
 	admin.Put("/disputes/:id/resolve", h.ResolveDispute)
 	admin.Post("/users/:userId/ban", h.BanUser)
-	admin.Get("/analytics/revenue", h.GetRevenueAnalytics)
-	admin.Get("/bookings", h.ListBookings)
-	admin.Get("/payments", h.ListPayments)
-	admin.Get("/users", h.ListAllUsers)
-	admin.Get("/sellers", h.ListAllSellers)
-	admin.Get("/transactions", h.ListAllTransactions)
-	admin.Get("/settings", h.GetPlatformSettings)
-	admin.Put("/settings", h.UpdatePlatformSettings)
+	admin.Get("/users", h.GetUsers)
+	admin.Get("/sellers", h.GetSellers)
+	admin.Get("/transactions", h.GetTransactions)
+	admin.Get("/bookings", h.GetBookings)
+	admin.Get("/payments", h.GetPayments)
+	admin.Get("/settings", h.GetSettings)
+	admin.Put("/settings", h.UpdateSettings)
+	admin.Get("/analytics/revenue", h.GetAnalyticsRevenue)
 }

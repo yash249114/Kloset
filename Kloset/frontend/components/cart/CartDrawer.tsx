@@ -108,7 +108,7 @@ export default function CartDrawer() {
                 >
                   {/* Media */}
                   <div className="w-16 h-20 relative rounded overflow-hidden bg-ivory-dark flex-shrink-0 border border-border">
-                    <Image src={item.image} alt={item.title} fill sizes="80px" className="object-cover" />
+                    <Image src={item.image} alt={item.title} width={64} height={80} unoptimized className="w-full h-full object-cover" />
                   </div>
 
                   {/* Details content */}

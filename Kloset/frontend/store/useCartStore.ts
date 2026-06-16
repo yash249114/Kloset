@@ -20,7 +20,6 @@ interface CartStore {
   couponCode: string;
   discountPercentage: number;
   isOpen: boolean;
-  _hasHydrated: boolean;
   
   // Actions
   setIsOpen: (isOpen: boolean) => void;
@@ -51,7 +50,8 @@ export const calculateRentalDays = (start: string, end: string): number => {
   if (!start || !end) return 1;
   const sDate = new Date(start);
   const eDate = new Date(end);
-  const diffTime = Math.abs(eDate.getTime() - sDate.getTime());
+  if (eDate <= sDate) return 0;
+  const diffTime = eDate.getTime() - sDate.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive of start/end
   return isNaN(diffDays) ? 1 : diffDays;
 };
@@ -63,7 +63,6 @@ export const useCartStore = create<CartStore>()(
       couponCode: '',
       discountPercentage: 0,
       isOpen: false,
-      _hasHydrated: false,
 
       setIsOpen: (isOpen) => set({ isOpen }),
 
@@ -195,10 +194,7 @@ export const useCartStore = create<CartStore>()(
     {
       name: 'kloset-cart-storage',
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isOpen = false;
-          state._hasHydrated = true;
-        }
+        if (state) state.isOpen = false;
       },
     }
   )
