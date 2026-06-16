@@ -234,17 +234,14 @@ func (s *Service) ResolveDispute(disputeID string, resolution string, note strin
 
 	// Trigger real Razorpay refund outside transaction
 	if refundAmt > 0 {
-		var refundID string
-		var refundErr error
-		if b.RazorpayPaymentID != nil && *b.RazorpayPaymentID != "" {
-			refundID, refundErr = s.rzpClient.RefundPayment(*b.RazorpayPaymentID, refundAmt, fmt.Sprintf("Dispute resolution refund: %s", note))
-			if refundErr != nil {
-				log.Error().Err(refundErr).Msg("Failed to process Razorpay refund on dispute resolution")
-				return fmt.Errorf("failed to process payment refund: %w", refundErr)
-			}
-		} else {
-			log.Warn().Msg("RazorpayPaymentID is missing. Simulating dispute resolution refund.")
-			refundID = "refund_mock_dispute_" + uuid.New().String()
+		if b.RazorpayPaymentID == nil || *b.RazorpayPaymentID == "" {
+			return errors.New("cannot process dispute refund: RazorpayPaymentID is missing")
+		}
+
+		refundID, refundErr := s.rzpClient.RefundPayment(*b.RazorpayPaymentID, refundAmt, fmt.Sprintf("Dispute resolution refund: %s", note))
+		if refundErr != nil {
+			log.Error().Err(refundErr).Msg("Failed to process Razorpay refund on dispute resolution")
+			return fmt.Errorf("failed to process payment refund: %w", refundErr)
 		}
 
 		// Create Transaction log record

@@ -33,7 +33,7 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	user, err := h.service.Register(&req)
+	user, err := h.service.Register(&req, c.IP())
 	if err != nil {
 		return response.Conflict(c, err.Error())
 	}
@@ -56,7 +56,7 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	result, err := h.service.Login(&req)
+	result, err := h.service.Login(&req, c.IP())
 	if err != nil {
 		return response.Unauthorized(c, err.Error())
 	}
@@ -126,7 +126,7 @@ func (h *Handler) GoogleLogin(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	result, err := h.service.GoogleLogin(&req)
+	result, err := h.service.GoogleLogin(&req, c.IP())
 	if err != nil {
 		return response.Unauthorized(c, err.Error())
 	}
@@ -227,7 +227,7 @@ func (h *Handler) ForgotPassword(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	if err := h.service.ForgotPassword(&req); err != nil {
+	if err := h.service.ForgotPassword(&req, c.IP()); err != nil {
 		return response.InternalError(c, err.Error())
 	}
 
@@ -245,7 +245,7 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	if err := h.service.ResetPassword(&req); err != nil {
+	if err := h.service.ResetPassword(&req, c.IP()); err != nil {
 		return response.BadRequest(c, err.Error())
 	}
 

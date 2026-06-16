@@ -20,6 +20,7 @@ interface CartStore {
   couponCode: string;
   discountPercentage: number;
   isOpen: boolean;
+  _hasHydrated: boolean;
   
   // Actions
   setIsOpen: (isOpen: boolean) => void;
@@ -62,6 +63,7 @@ export const useCartStore = create<CartStore>()(
       couponCode: '',
       discountPercentage: 0,
       isOpen: false,
+      _hasHydrated: false,
 
       setIsOpen: (isOpen) => set({ isOpen }),
 
@@ -193,7 +195,10 @@ export const useCartStore = create<CartStore>()(
     {
       name: 'kloset-cart-storage',
       onRehydrateStorage: () => (state) => {
-        if (state) state.isOpen = false;
+        if (state) {
+          state.isOpen = false;
+          state._hasHydrated = true;
+        }
       },
     }
   )

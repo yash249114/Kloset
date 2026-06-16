@@ -12,7 +12,6 @@ import {
   Trash2,
   MessageSquare,
   Clock,
-  RotateCcw,
   ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';

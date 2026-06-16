@@ -21,7 +21,6 @@ const STATUS_BADGE: Record<string, 'gold' | 'sage' | 'charcoal' | 'rose'> = {
 
 export default function TicketDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const ticketId = params.ticketId as string;
 
   const [ticket, setTicket] = useState<SupportTicket | null>(null);

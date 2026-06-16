@@ -23,22 +23,6 @@ interface AIOpsData {
   }>;
 }
 
-const mockAlerts = [
-  { id: 'a1', level: 'critical', agent: 'KYC-Agent', message: 'Seller verification queue overflow — 12 pending > SLA', time: '8m ago', metric: 'Queue: 12' },
-  { id: 'a2', level: 'warning', agent: 'Search-Engine', message: 'P99 latency > 600ms for past 5 min window', time: '22m ago', metric: '619ms p99' },
-  { id: 'a3', level: 'warning', agent: 'Escrow-Svc', message: 'Dispute resolution > 48h pending: 3 open cases', time: '35m ago', metric: '3 cases' },
-  { id: 'a4', level: 'info', agent: 'Stylist-AI', message: 'New trend vector detected: pastels +20% queries', time: '1h ago', metric: '+20%' },
-  { id: 'a5', level: 'critical', agent: 'Booking-Worker', message: 'Pickup overdue flag on 5 bookings', time: '1h ago', metric: '5 overdue' },
-];
-
-const mockIncidents = [
-  { id: 'i1', status: 'resolved', agent: 'Stylist-AI', event: 'Latency spike 1200ms', time: '10m ago', duration: '4m 12s', resolution: 'Auto-scaled 2 replicas' },
-  { id: 'i2', status: 'investigating', agent: 'Recommend-1', event: 'Recommendation timeout > 3%', time: '42m ago', duration: 'ongoing', resolution: 'Root cause analysis' },
-  { id: 'i3', status: 'monitoring', agent: 'Search-2', event: 'Cache miss ratio > 5%', time: '2h ago', duration: '12m', resolution: 'Warming cache' },
-  { id: 'i4', status: 'resolved', agent: 'Payment-GW', event: 'Webhook delivery failure', time: '3h ago', duration: '2m 48s', resolution: 'Retry mechanism fixed' },
-  { id: 'i5', status: 'monitoring', agent: 'Auth-Svc', event: 'Elevated 401 rate (>2%)', time: '4h ago', duration: '—', resolution: 'Monitoring token refresh' },
-];
-
 function PriorityBadge({ level }: { level: string }) {
   const variants: Record<string, string> = {
     critical: 'bg-error/20 text-error border-error/50',

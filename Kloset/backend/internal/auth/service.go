@@ -91,38 +91,38 @@ func (s *Service) Register(req *RegisterRequest, ip string) (*UserResponse, erro
 }
 
 // Login authenticates a user with email and password
-func (s *Service) Login(req *LoginRequest) (*AuthResponse, error) {
+func (s *Service) Login(req *LoginRequest, ip string) (*AuthResponse, error) {
 	user, err := s.repo.FindByEmail(req.Email)
 	if err != nil {
 		if s.logSvc != nil {
-			s.logSvc.LogEvent(req.Email, "Failed login attempt: "+err.Error(), "127.0.0.1", "warn")
+			s.logSvc.LogEvent(req.Email, "Failed login attempt: "+err.Error(), ip, "warn")
 		}
 		return nil, err
 	}
 	if user == nil {
 		if s.logSvc != nil {
-			s.logSvc.LogEvent(req.Email, "Failed login attempt: user not found", "127.0.0.1", "warn")
+			s.logSvc.LogEvent(req.Email, "Failed login attempt: user not found", ip, "warn")
 		}
 		return nil, errors.New("invalid email or password")
 	}
 
 	if !user.IsActive {
 		if s.logSvc != nil {
-			s.logSvc.LogEvent(req.Email, "Suspended user tried to log in", "127.0.0.1", "warn")
+			s.logSvc.LogEvent(req.Email, "Suspended user tried to log in", ip, "warn")
 		}
 		return nil, errors.New("account has been suspended")
 	}
 
 	if !user.IsVerified {
 		if s.logSvc != nil {
-			s.logSvc.LogEvent(req.Email, "Unverified user tried to log in", "127.0.0.1", "warn")
+			s.logSvc.LogEvent(req.Email, "Unverified user tried to log in", ip, "warn")
 		}
 		return nil, errors.New("email not verified. Please verify your email before logging in")
 	}
 
 	if !utils.CheckPassword(req.Password, user.PasswordHash) {
 		if s.logSvc != nil {
-			s.logSvc.LogEvent(req.Email, "Failed login attempt: invalid password", "127.0.0.1", "warn")
+			s.logSvc.LogEvent(req.Email, "Failed login attempt: invalid password", ip, "warn")
 		}
 		return nil, errors.New("invalid email or password")
 	}
@@ -132,7 +132,7 @@ func (s *Service) Login(req *LoginRequest) (*AuthResponse, error) {
 
 	// Log audit event
 	if s.logSvc != nil {
-		s.logSvc.LogEvent(user.Email, "User logged in successfully", "127.0.0.1", "info")
+		s.logSvc.LogEvent(user.Email, "User logged in successfully", ip, "info")
 	}
 
 	// Trigger login notification in-app
@@ -250,7 +250,7 @@ func (s *Service) generateAccessToken(user *User) (string, error) {
 }
 
 // GoogleLogin authenticates a Google user, linking or creating the user
-func (s *Service) GoogleLogin(req *GoogleLoginRequest) (*AuthResponse, error) {
+func (s *Service) GoogleLogin(req *GoogleLoginRequest, ip string) (*AuthResponse, error) {
 	var email, name string
 
 	expectedAud := getEnvVar("GOOGLE_CLIENT_ID", "")
@@ -319,7 +319,7 @@ func (s *Service) GoogleLogin(req *GoogleLoginRequest) (*AuthResponse, error) {
 	_ = s.repo.UpdateLastLogin(user.ID)
 
 	if s.logSvc != nil {
-		s.logSvc.LogEvent(user.Email, "User logged in with Google identity", "127.0.0.1", "info")
+		s.logSvc.LogEvent(user.Email, "User logged in with Google identity", ip, "info")
 	}
 
 	return s.generateAuthResponse(user)
@@ -526,7 +526,7 @@ func (s *Service) SendEmailOTPByUserID(userID string) error {
 }
 
 // VerifyEmailOTP checks the OTP code and marks the user as verified
-func (s *Service) VerifyEmailOTP(emailAddr string, code string) (*AuthResponse, error) {
+func (s *Service) VerifyEmailOTP(emailAddr string, code string, ip string) (*AuthResponse, error) {
 	now := time.Now()
 
 	var verification EmailOTPVerification
@@ -587,20 +587,17 @@ func (s *Service) VerifyEmailOTP(emailAddr string, code string) (*AuthResponse, 
 }
 
 // ForgotPassword generates a reset token, stores it hashed, and sends a reset link via email
-func (s *Service) ForgotPassword(req *ForgotPasswordRequest) error {
+func (s *Service) ForgotPassword(req *ForgotPasswordRequest, ip string) error {
 	user, err := s.repo.FindByEmail(req.Email)
 	if err != nil {
 		return err
 	}
 	if user == nil {
-		// Don't reveal whether the email exists; just return success
 		return nil
 	}
 
-	// Invalidate any existing unused tokens for this email
 	_ = s.repo.InvalidatePasswordResetTokens(req.Email)
 
-	// Generate a cryptographically random token
 	tokenBytes := make([]byte, 32)
 	if _, err := rand.Read(tokenBytes); err != nil {
 		return errors.New("failed to generate reset token")
@@ -618,7 +615,6 @@ func (s *Service) ForgotPassword(req *ForgotPasswordRequest) error {
 		return errors.New("failed to store reset token")
 	}
 
-	// Send password reset email with the raw token
 	if s.emailSvc != nil {
 		if emailErr := s.emailSvc.SendPasswordReset(req.Email, rawToken); emailErr != nil {
 			fmt.Printf("Failed to send password reset email to %s: %v\n", req.Email, emailErr)
@@ -626,14 +622,14 @@ func (s *Service) ForgotPassword(req *ForgotPasswordRequest) error {
 	}
 
 	if s.logSvc != nil {
-		s.logSvc.LogEvent(req.Email, "Password reset requested", "127.0.0.1", "info")
+		s.logSvc.LogEvent(req.Email, "Password reset requested", ip, "info")
 	}
 
 	return nil
 }
 
 // ResetPassword validates a reset token and updates the user's password
-func (s *Service) ResetPassword(req *ResetPasswordRequest) error {
+func (s *Service) ResetPassword(req *ResetPasswordRequest, ip string) error {
 	tokenHash := HashToken(req.Token)
 
 	resetToken, err := s.repo.FindPasswordResetToken(tokenHash)
@@ -671,7 +667,7 @@ func (s *Service) ResetPassword(req *ResetPasswordRequest) error {
 	_ = s.repo.DeleteUserRefreshTokens(user.ID)
 
 	if s.logSvc != nil {
-		s.logSvc.LogEvent(user.Email, "Password reset completed successfully", "127.0.0.1", "info")
+		s.logSvc.LogEvent(user.Email, "Password reset completed successfully", ip, "info")
 	}
 
 	return nil

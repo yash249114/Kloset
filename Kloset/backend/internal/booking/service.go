@@ -468,33 +468,58 @@ func (s *Service) Cancel(idStr, userID, reason string) error {
 
 	// Trigger transaction logs refund sequence
 	if booking.PaymentStatus == "completed" {
-		var refundID string
-		var err error
-		if booking.RazorpayPaymentID != nil && *booking.RazorpayPaymentID != "" {
-			refundID, err = s.rzpClient.RefundPayment(*booking.RazorpayPaymentID, booking.TotalAmount, fmt.Sprintf("Cancellation of Ref: %s", booking.BookingRef))
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to process Razorpay refund on cancellation")
+		if booking.RazorpayPaymentID == nil || *booking.RazorpayPaymentID == "" {
+			log.Error().Str("booking_ref", booking.BookingRef).Msg("RazorpayPaymentID is missing. Cannot process refund.")
+			if s.notifSvc != nil {
+				_ = s.notifSvc.Create(
+					booking.RenterID.String(),
+					"refund_failed",
+					"Refund Failed",
+					fmt.Sprintf("We could not process your refund of ₹%.2f for booking %s automatically. Please contact support.", booking.TotalAmount, booking.BookingRef),
+					[]string{"in_app", "email"},
+					map[string]interface{}{
+						"ref":    booking.BookingRef,
+						"amount": booking.TotalAmount,
+					},
+				)
 			}
-		} else {
-			log.Warn().Msg("RazorpayPaymentID is missing. Simulating cancellation refund.")
-			refundID = "refund_mock_" + uuid.New().String()
+			return nil
+		}
+
+		refundID, err := s.rzpClient.RefundPayment(*booking.RazorpayPaymentID, booking.TotalAmount, fmt.Sprintf("Cancellation of Ref: %s", booking.BookingRef))
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to process Razorpay refund on cancellation")
+			if s.notifSvc != nil {
+				_ = s.notifSvc.Create(
+					booking.RenterID.String(),
+					"refund_failed",
+					"Refund Failed",
+					fmt.Sprintf("Your refund of ₹%.2f for booking %s could not be completed. Please contact support.", booking.TotalAmount, booking.BookingRef),
+					[]string{"in_app", "email"},
+					map[string]interface{}{
+						"ref":    booking.BookingRef,
+						"amount": booking.TotalAmount,
+					},
+				)
+			}
+			return nil
 		}
 
 		gateway := "razorpay"
 		note := fmt.Sprintf("Cancellation refund for Ref: %s. Reason: %s", booking.BookingRef, reason)
 		refundTx := map[string]interface{}{
-			"id":           uuid.New(),
-			"user_id":      booking.RenterID,
-			"booking_id":   booking.ID,
-			"type":         "rental_refund",
-			"amount":       booking.TotalAmount,
-			"status":       "completed",
-			"gateway":      &gateway,
+			"id":             uuid.New(),
+			"user_id":        booking.RenterID,
+			"booking_id":     booking.ID,
+			"type":           "rental_refund",
+			"amount":         booking.TotalAmount,
+			"status":         "completed",
+			"gateway":        &gateway,
 			"gateway_txn_id": &refundID,
-			"note":         &note,
+			"note":           &note,
 		}
 		_ = s.repo.db.Table("transactions").Create(&refundTx).Error
-		
+
 		if s.notifSvc != nil {
 			_ = s.notifSvc.Create(
 				booking.RenterID.String(),
@@ -515,10 +540,6 @@ func (s *Service) Cancel(idStr, userID, reason string) error {
 
 // ─── Razorpay REST Gateway Client ─────────────────────────────────────
 func (s *Service) createRazorpayOrder(amount float64, receipt string) (string, error) {
-	// If credentials are key placeholders (developer mock mode), return a simulated order ID
-	if s.cfg.App.Env != "production" && (s.cfg.Razorpay.KeyID == "rzp_test_xxxxxxxxxxxx" || s.cfg.Razorpay.KeySecret == "your_razorpay_secret") {
-		return fmt.Sprintf("order_simulated_%d", time.Now().UnixNano()%1000000), nil
-	}
 	return s.rzpClient.CreateOrder(amount, receipt)
 }
 

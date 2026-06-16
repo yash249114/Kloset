@@ -10,8 +10,22 @@ import Button from '@/components/ui/Button';
 const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
 export default function CartPage() {
-  const { cartItems, removeItem, getCalculations } = useCartStore();
+  const { cartItems, _hasHydrated, removeItem, getCalculations } = useCartStore();
   const calculations = getCalculations();
+
+  if (!_hasHydrated) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 px-4">
+        <div className="space-y-4 animate-pulse">
+          <div className="h-4 bg-ivory-dark rounded w-24 mb-8" />
+          <div className="h-8 bg-ivory-dark rounded w-48 mb-4" />
+          {[1, 2].map((i) => (
+            <div key={i} className="h-24 bg-white border border-border rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
