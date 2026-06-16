@@ -9,8 +9,8 @@ services:
     runtime: image
     image:
       url: # Leave blank — Render builds from Dockerfile
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: ./Kloset/backend/Dockerfile
+    dockerContext: ./Kloset/backend
     env: production
     region: oregon  # closest to Supabase ap-southeast-1 via VPN
     plan: starter   # 512MB RAM, 0.5 CPU — scale up as needed

@@ -36,7 +36,7 @@ jobs:
         run: |
           # Scan for leaked secrets in the PR diff
           DIFF=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.go' '*.ts' '*.tsx' '*.env*' '*.json' || true)
-          if echo "$DIFF" | grep -qiE '(password|secret|api_key|token)\s*[:=]\s*["\x27]?[a-zA-Z0-9]{16,}'; then
+          if echo "$DIFF" | grep -qiE '(password|secret|api_key|token)\s*[:=]\s*['"'"'"]?[a-zA-Z0-9]{16,}'; then
             echo "WARNING: Potential secret detected in diff"
             echo "Review carefully before merging"
           else
