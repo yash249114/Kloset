@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SlidersHorizontal, X, Star, Search, RotateCcw, LayoutGrid } from 'lucide-react';
+import { SlidersHorizontal, X, Star, Search, RotateCcw, LayoutGrid, Sparkles, Filter } from 'lucide-react';
 import { outfitsAPI } from '@/lib/api';
 import type { Outfit, OutfitCategory } from '@/types';
 import Button from '@/components/ui/Button';
@@ -42,6 +42,14 @@ const PRICE_RANGES = [
   { label: 'Over ₹4,000', min: 4000, max: 99999 },
 ];
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newly Listed' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'rating', label: 'Top Rated' },
+  { value: 'popular', label: 'Popularity' },
+];
+
 const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
 function DiscoverContent() {
@@ -52,7 +60,6 @@ function DiscoverContent() {
   const [loading, setLoading] = useState(true);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  // Search & Filter States
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [category, setCategory] = useState<string>(searchParams.get('category') || '');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
@@ -63,7 +70,6 @@ function DiscoverContent() {
   const [city, setCity] = useState(searchParams.get('city') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
 
-  // Load outfits from API
   const fetchOutfits = useCallback(async () => {
     setLoading(true);
     try {
@@ -77,11 +83,10 @@ function DiscoverContent() {
         max_price: priceRange?.max ?? undefined,
         occasion: selectedOccasions.join(',') || undefined,
       };
-
       const resp = await outfitsAPI.browse(filters);
       setOutfits(resp.outfits || []);
     } catch (err) {
-      console.warn('API error browsing outfits, using mock fallback list', err);
+      console.warn('API error browsing outfits', err);
       setOutfits([]);
     } finally {
       setLoading(false);
@@ -89,10 +94,7 @@ function DiscoverContent() {
   }, [searchQuery, category, city, sortBy, selectedSizes, priceRange, selectedOccasions]);
 
   useEffect(() => {
-    async function init() {
-      await fetchOutfits();
-    }
-    init();
+    fetchOutfits();
   }, [fetchOutfits]);
 
   const updateURLParams = useCallback(() => {
@@ -132,13 +134,20 @@ function DiscoverContent() {
     );
   };
 
+  const hasActiveFilters = !!category || selectedSizes.length > 0 || !!priceRange || selectedOccasions.length > 0 || !!city;
+
+  const activeFilterChips: { label: string; onRemove: () => void }[] = [];
+  if (category) activeFilterChips.push({ label: CATEGORY_OPTIONS.find(o => o.value === category)?.label || category, onRemove: () => setCategory('') });
+  selectedOccasions.forEach(occ => activeFilterChips.push({ label: OCCASION_OPTIONS.find(o => o.value === occ)?.label || occ, onRemove: () => toggleOccasion(occ) }));
+  selectedSizes.forEach(s => activeFilterChips.push({ label: `Size ${s}`, onRemove: () => toggleSize(s) }));
+  if (priceRange) activeFilterChips.push({ label: PRICE_RANGES.find(r => r.min === priceRange.min && r.max === priceRange.max)?.label || `₹${priceRange.min}-${priceRange.max}`, onRemove: () => setPriceRange(null) });
+  if (city) activeFilterChips.push({ label: city, onRemove: () => setCity('') });
+
   const filterSidebar = (
     <div className="space-y-8 text-left font-sans select-none">
-      
-      {/* Category filter */}
       <div className="space-y-3">
-        <h4 className="text-[10px] font-mono tracking-widest uppercase text-charcoal font-bold">
-          Category
+        <h4 className="text-[10px] font-mono tracking-widest uppercase text-charcoal font-bold flex items-center gap-2">
+          <Filter size={12} className="text-champagne" /> Category
         </h4>
         <div className="flex flex-col gap-2">
           {CATEGORY_OPTIONS.map((opt) => (
@@ -151,8 +160,8 @@ function DiscoverContent() {
               className={`
                 h-[52px] w-full px-4 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border text-left cursor-pointer
                 ${category === opt.value
-                  ? 'bg-charcoal text-ivory border-charcoal'
-                  : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:text-charcoal'
+                  ? 'bg-charcoal text-ivory border-charcoal shadow-sm'
+                  : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:text-charcoal hover:shadow-sm'
                 }
               `}
             >
@@ -162,10 +171,9 @@ function DiscoverContent() {
         </div>
       </div>
 
-      {/* Occasion filter */}
       <div className="space-y-3">
-        <h4 className="text-[10px] font-mono tracking-widest uppercase text-charcoal font-bold">
-          Occasions
+        <h4 className="text-[10px] font-mono tracking-widest uppercase text-charcoal font-bold flex items-center gap-2">
+          <Sparkles size={12} className="text-champagne" /> Occasions
         </h4>
         <div className="flex flex-wrap gap-2">
           {OCCASION_OPTIONS.map((opt) => {
@@ -180,8 +188,8 @@ function DiscoverContent() {
                 className={`
                   px-4 h-[52px] rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border cursor-pointer
                   ${isSelected
-                    ? 'bg-charcoal text-ivory border-charcoal'
-                    : 'bg-white border-border text-charcoal-light hover:border-charcoal'
+                    ? 'bg-charcoal text-ivory border-charcoal shadow-sm'
+                    : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:shadow-sm'
                   }
                 `}
               >
@@ -192,11 +200,8 @@ function DiscoverContent() {
         </div>
       </div>
 
-      {/* Size filter */}
       <div className="space-y-3">
-        <h4 className="text-[10px] font-mono tracking-widest uppercase text-charcoal font-bold">
-          Size
-        </h4>
+        <h4 className="text-[10px] font-mono tracking-widest uppercase text-charcoal font-bold">Size</h4>
         <div className="grid grid-cols-3 gap-2">
           {SIZE_OPTIONS.map((s) => {
             const isSelected = selectedSizes.includes(s);
@@ -210,7 +215,7 @@ function DiscoverContent() {
                 className={`
                   h-11 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border cursor-pointer
                   ${isSelected
-                    ? 'bg-charcoal text-ivory border-charcoal'
+                    ? 'bg-charcoal text-ivory border-charcoal shadow-sm'
                     : 'bg-white border-border text-charcoal-light hover:border-charcoal'
                   }
                 `}
@@ -222,11 +227,8 @@ function DiscoverContent() {
         </div>
       </div>
 
-      {/* Price filters */}
       <div className="space-y-3">
-        <h4 className="text-[10px] font-mono tracking-widest uppercase text-charcoal font-bold">
-          Rental Budget
-        </h4>
+        <h4 className="text-[10px] font-mono tracking-widest uppercase text-charcoal font-bold">Rental Budget</h4>
         <div className="flex flex-col gap-2">
           {PRICE_RANGES.map((rng, i) => {
             const isSelected = priceRange?.min === rng.min && priceRange?.max === rng.max;
@@ -240,8 +242,8 @@ function DiscoverContent() {
                 className={`
                   h-[52px] w-full px-4 rounded text-xs font-mono uppercase tracking-wider transition-all duration-300 font-bold border text-left cursor-pointer
                   ${isSelected
-                    ? 'bg-charcoal text-ivory border-charcoal'
-                    : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:text-charcoal'
+                    ? 'bg-charcoal text-ivory border-charcoal shadow-sm'
+                    : 'bg-white border-border text-charcoal-light hover:border-charcoal hover:text-charcoal hover:shadow-sm'
                   }
                 `}
               >
@@ -252,7 +254,6 @@ function DiscoverContent() {
         </div>
       </div>
 
-      {/* Reset button */}
       <Button
         variant="outline"
         onClick={resetAllFilters}
@@ -260,15 +261,17 @@ function DiscoverContent() {
       >
         <RotateCcw size={14} /> Reset Filters
       </Button>
-
     </div>
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-24 select-none font-sans text-charcoal">
-      
-      {/* Title */}
-      <div className="text-left mb-12">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={springTransition}
+      className="max-w-7xl mx-auto px-6 py-24 select-none font-sans text-charcoal"
+    >
+      <div className="text-left mb-10">
         <span className="text-[10px] font-mono tracking-[0.25em] text-champagne uppercase font-bold block">
           Luxe Wardrobe
         </span>
@@ -277,11 +280,8 @@ function DiscoverContent() {
         </h1>
       </div>
 
-      {/* Search & Sort Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center mb-8">
-        
-        {/* Search bar */}
-        <div className="md:col-span-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center mb-6">
+        <div className="md:col-span-5">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-charcoal-light" size={16} />
             <input
@@ -289,95 +289,107 @@ function DiscoverContent() {
               placeholder="Search by designer, outfit category, color..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-[52px] pl-12 pr-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
+              className="w-full h-[52px] pl-12 pr-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne transition-shadow focus:shadow-sm"
             />
           </div>
         </div>
 
-        {/* City Filter */}
         <div className="md:col-span-3">
           <input
             type="text"
             placeholder="Filter by city (e.g. Mumbai)"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="w-full h-[52px] px-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
+            className="w-full h-[52px] px-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne transition-shadow focus:shadow-sm"
           />
         </div>
 
-        {/* Sort drop dropdown */}
-        <div className="md:col-span-3">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="w-full h-[52px] px-4 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne"
+        <div className="md:col-span-4 flex gap-3">
+          <div className="flex-1 relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full h-[52px] px-4 pr-10 text-sm font-sans bg-white border border-border rounded outline-none focus:border-champagne appearance-none cursor-pointer transition-shadow focus:shadow-sm"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-charcoal-light">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 5L6 8L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <button
+            onClick={() => setMobileFiltersOpen(true)}
+            className="lg:hidden h-[52px] px-5 border border-border rounded bg-white hover:bg-ivory-dark transition-colors cursor-pointer flex items-center gap-2"
           >
-            <option value="newest">Newly Listed</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="rating">Top Rated</option>
-            <option value="popular">Popularity</option>
-          </select>
+            <Filter size={16} className="text-champagne" />
+          </button>
         </div>
-
       </div>
 
-      {/* Main Layout Grid */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <span className="text-[9px] font-mono uppercase tracking-wider text-charcoal-light font-bold mr-1">Active Filters:</span>
+          {activeFilterChips.map((chip, i) => (
+            <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-charcoal/5 border border-border/60 rounded-full text-[10px] font-mono text-charcoal">
+              {chip.label}
+              <button onClick={chip.onRemove} className="hover:text-error transition-colors cursor-pointer">
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+          <button onClick={resetAllFilters} className="text-[9px] font-mono uppercase tracking-wider text-champagne hover:text-charcoal transition-colors ml-1 cursor-pointer">
+            Clear all
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        
-        {/* Left Sidebar (Desktop Filters) */}
-        <aside className="hidden lg:block lg:col-span-3 border border-border p-6 rounded-lg bg-white">
-          {filterSidebar}
+        <aside className="hidden lg:block lg:col-span-3">
+          <div className="sticky top-24 border border-border p-6 rounded-lg bg-white shadow-sm">
+            {filterSidebar}
+          </div>
         </aside>
 
-        {/* Right Content Area */}
         <div className="lg:col-span-9 space-y-6">
-          
-          {/* Mobile Filters Trigger */}
-          <div className="lg:hidden flex justify-between items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              transition={springTransition}
-              onClick={() => setMobileFiltersOpen(true)}
-              className="flex items-center gap-2 h-[52px] px-6 border border-border rounded font-mono text-xs uppercase font-bold text-charcoal bg-white cursor-pointer"
-            >
-              <SlidersHorizontal size={14} /> Filter Options
-            </motion.button>
-            <span className="text-xs font-mono text-charcoal-light">{outfits.length} Results</span>
-          </div>
-
           <div className="hidden lg:flex justify-between items-center text-xs font-mono text-charcoal-light">
-            <span>Showing {outfits.length} couture masterpieces</span>
+            <span className="flex items-center gap-2">
+              <Sparkles size={13} className="text-champagne" />
+              {outfits.length} {outfits.length === 1 ? 'couture masterpiece' : 'couture masterpieces'}
+            </span>
             <span className="flex items-center gap-1"><LayoutGrid size={14} /> Gallery Grid</span>
           </div>
 
           {loading ? (
-            // Shimmer skeletons
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((idx) => (
-                <div key={idx} className="space-y-4 animate-pulse">
+                <div key={idx} className="space-y-3 animate-pulse">
                   <div className="shimmer h-[340px] rounded-lg bg-ivory-dark" />
+                  <div className="h-3 bg-ivory-dark rounded w-1/3" />
                   <div className="h-4 bg-ivory-dark rounded w-3/4" />
-                  <div className="h-4 bg-ivory-dark rounded w-1/2" />
+                  <div className="h-3 bg-ivory-dark rounded w-1/2" />
                 </div>
               ))}
             </div>
           ) : outfits.length === 0 ? (
-            // Empty State
-            <div className="py-24 text-center space-y-4 border border-border rounded-xl bg-white p-6">
-              <p className="font-display text-xl italic text-charcoal-light">
-                No matching couture listings found
-              </p>
-              <p className="text-xs text-charcoal-light leading-relaxed max-w-sm mx-auto font-light">
-                Adjust your budget range, try removing size filters, or search for broader keywords.
-              </p>
+            <div className="py-20 text-center space-y-6 border border-border/60 rounded-xl bg-white p-10 shadow-sm">
+              <div className="w-20 h-20 mx-auto rounded-full bg-champagne/5 border border-champagne/20 flex items-center justify-center">
+                <Sparkles size={32} className="text-champagne/60" />
+              </div>
+              <div className="space-y-2 max-w-xs mx-auto">
+                <h3 className="font-display text-lg font-semibold text-charcoal">No Results Found</h3>
+                <p className="text-xs text-charcoal-light leading-relaxed font-light">
+                  We couldn&apos;t find any couture pieces matching your current filters. Try adjusting your search criteria.
+                </p>
+              </div>
               <Button variant="gold" onClick={resetAllFilters} className="cursor-pointer">
-                Reset Search Filters
+                Reset All Filters
               </Button>
             </div>
           ) : (
-            // Outfit Grid
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {outfits.map((item) => {
                 const imgUrl = item.images?.[0]?.url || '/placeholder-outfit.jpg';
@@ -386,7 +398,7 @@ function DiscoverContent() {
                     key={item.id}
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ y: -6, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.03)' }}
+                    whileHover={{ y: -6, boxShadow: '0 12px 30px rgba(0, 0, 0, 0.04)' }}
                     transition={springTransition}
                     className="bg-white border border-border rounded-lg overflow-hidden group text-left flex flex-col justify-between"
                   >
@@ -395,12 +407,10 @@ function DiscoverContent() {
                         src={imgUrl}
                         alt={item.title}
                         whileHover={{ scale: 1.05 }}
-                        transition={springTransition}
+                        transition={{ duration: 0.6 }}
                         className="w-full h-full object-cover"
                       />
-                      
-                      {/* Hover details link */}
-                      <div className="absolute inset-0 bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={springTransition}>
                           <Link
                             href={`/outfit/${item.id}`}
@@ -410,14 +420,12 @@ function DiscoverContent() {
                           </Link>
                         </motion.div>
                       </div>
-
                       {item.rating_avg > 0 && (
-                        <span className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm border border-border/40 text-[9px] font-mono font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                        <span className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm border border-border/40 text-[9px] font-mono font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
                           <Star size={10} className="fill-gold text-gold" /> {item.rating_avg}
                         </span>
                       )}
                     </div>
-
                     <div className="p-5 space-y-1.5 flex-grow flex flex-col justify-between">
                       <div>
                         <div className="flex justify-between items-center">
@@ -434,14 +442,13 @@ function DiscoverContent() {
                           {item.title}
                         </h4>
                       </div>
-
                       <div className="flex items-center justify-between pt-3 border-t border-border/40 mt-4 text-xs font-bold font-mono text-charcoal">
                         <span>
                           ₹{item.price_1day?.toLocaleString('en-IN')}
                           <span className="text-[9px] font-normal text-charcoal-light">/day</span>
                         </span>
                         <span className="text-[9px] font-normal text-charcoal-light">
-                          Dep: ₹{item.security_deposit}
+                          Dep: ₹{item.security_deposit?.toLocaleString('en-IN')}
                         </span>
                       </div>
                     </div>
@@ -450,12 +457,9 @@ function DiscoverContent() {
               })}
             </div>
           )}
-
         </div>
-
       </div>
 
-      {/* Mobile Drawer (Portal overlay) */}
       <AnimatePresence>
         {mobileFiltersOpen && (
           <div className="fixed inset-0 lg:hidden" style={{ zIndex: Z_INDEX.FILTERS }}>
@@ -471,13 +475,13 @@ function DiscoverContent() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={springTransition}
-              className="absolute left-0 top-0 bottom-0 w-80 max-w-full bg-ivory p-6 border-r border-border overflow-y-auto flex flex-col"
+              className="absolute left-0 top-0 bottom-0 w-80 max-w-full bg-ivory p-6 border-r border-border overflow-y-auto flex flex-col shadow-xl"
             >
               <div className="flex items-center justify-between border-b border-border pb-4 mb-6">
                 <h3 className="font-display text-lg font-bold">Catalog Filters</h3>
                 <button
                   onClick={() => setMobileFiltersOpen(false)}
-                  className="w-[52px] h-[52px] flex items-center justify-center border border-border hover:bg-ivory-dark rounded"
+                  className="w-[52px] h-[52px] flex items-center justify-center border border-border hover:bg-ivory-dark rounded transition-colors cursor-pointer"
                 >
                   <X size={14} />
                 </button>
@@ -487,16 +491,38 @@ function DiscoverContent() {
           </div>
         )}
       </AnimatePresence>
-
-    </div>
+    </motion.div>
   );
 }
 
 export default function DiscoverPage() {
   return (
     <Suspense fallback={
-      <div className="py-24 text-center">
-        <span className="font-mono text-xs uppercase animate-pulse">Loading Discover Workspace...</span>
+      <div className="max-w-7xl mx-auto px-6 py-24 select-none">
+        <div className="text-left mb-10">
+          <div className="h-3 bg-ivory-dark rounded w-24 animate-pulse mb-3" />
+          <div className="h-10 bg-ivory-dark rounded w-64 animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="hidden lg:block lg:col-span-3">
+            <div className="space-y-6 animate-pulse">
+              <div className="h-4 bg-ivory-dark rounded w-20" />
+              {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-[52px] bg-ivory-dark rounded" />)}
+            </div>
+          </div>
+          <div className="lg:col-span-9">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+              {[1, 2, 3, 4, 5, 6].map((idx) => (
+                <div key={idx} className="space-y-3">
+                  <div className="shimmer h-[340px] rounded-lg bg-ivory-dark" />
+                  <div className="h-3 bg-ivory-dark rounded w-1/3" />
+                  <div className="h-4 bg-ivory-dark rounded w-3/4" />
+                  <div className="h-3 bg-ivory-dark rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     }>
       <DiscoverContent />
