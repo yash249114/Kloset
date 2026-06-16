@@ -55,20 +55,26 @@ function ExecutiveCard({ label, val, desc, icon: Icon, trend, index }: { label: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...springTransition, delay: index * 0.05 }}
     >
-      <Card hoverEffect={true} padding="sm" theme="admin" className="flex flex-col justify-between h-28 w-full relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-20 h-20 -mr-6 -mt-6 rounded-full bg-[#C9A96E]/[0.03] group-hover:bg-[#C9A96E]/[0.06] transition-colors" />
+      <div className="flex flex-col justify-between h-32 bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-5 w-full relative overflow-hidden group hover:border-[#C9A96E]/30 hover:shadow-lg transition-all duration-300 cursor-default">
+        <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full bg-gradient-to-br from-[#C9A96E]/10 to-[#C9A96E]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div className="flex items-center justify-between text-[#8C8C8C] relative">
-          <span className="text-[9px] font-mono tracking-wider uppercase">{label}</span>
-          <Icon size={13} className="text-[#C9A96E]" />
+          <span className="text-[10px] font-mono tracking-wider uppercase font-bold">{label}</span>
+          <div className="w-8 h-8 rounded-xl bg-[#C9A96E]/10 flex items-center justify-center">
+            <Icon size={14} className="text-[#C9A96E]" />
+          </div>
         </div>
         <div className="relative">
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold font-mono text-[#E8E8E8]">{val}</span>
-            {trend && <span className="text-[8px] font-mono text-success">{trend}</span>}
+            <span className="text-2xl font-bold font-mono text-[#E8E8E8]">{val}</span>
+            {trend && (
+              <span className="text-[9px] font-mono text-success bg-success/10 px-1.5 py-0.5 rounded-full">
+                {trend}
+              </span>
+            )}
           </div>
-          <span className="text-[8px] text-[#8C8C8C] block mt-0.5">{desc}</span>
+          <span className="text-[10px] text-[#8C8C8C] block mt-1 font-light">{desc}</span>
         </div>
-      </Card>
+      </div>
     </motion.div>
   );
 }
@@ -113,10 +119,11 @@ export default function AdminOverviewPage() {
           <h1 className="text-3xl md:text-4xl font-display font-medium text-[#E8E8E8] mt-1">
             Executive Overview
           </h1>
+          <p className="text-[10px] text-[#8C8C8C] font-mono mt-1">Real-time platform intelligence</p>
         </div>
         <button
           onClick={() => loadStats(true)}
-          className="h-10 px-4 border border-[#2A2A2A] hover:bg-[#1A1A1A] text-[#C9A96E] rounded flex items-center gap-1.5 transition-colors cursor-pointer text-xs font-mono uppercase font-bold"
+          className="h-10 px-4 border border-[#2A2A2A] hover:bg-[#1A1A1A] hover:border-[#C9A96E]/30 text-[#C9A96E] rounded-xl flex items-center gap-1.5 transition-all duration-300 cursor-pointer text-xs font-mono uppercase font-bold"
         >
           <RefreshCcw size={12} /> Sync Analytics
         </button>
@@ -126,14 +133,21 @@ export default function AdminOverviewPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="shimmer h-28 rounded bg-[#1A1A1A] animate-pulse" />
+              <div key={i} className="h-32 bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-5 space-y-3 animate-pulse">
+                <div className="flex justify-between">
+                  <div className="shimmer h-3 bg-[#2A2A2A] rounded w-16" />
+                  <div className="shimmer h-8 bg-[#2A2A2A] rounded-xl w-8" />
+                </div>
+                <div className="shimmer h-6 bg-[#2A2A2A] rounded w-20" />
+                <div className="shimmer h-2 bg-[#2A2A2A] rounded w-24" />
+              </div>
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7 shimmer h-80 rounded bg-[#1A1A1A] animate-pulse" />
+            <div className="lg:col-span-7 h-80 bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 animate-pulse" />
             <div className="lg:col-span-5 space-y-4">
-              <div className="shimmer h-36 rounded bg-[#1A1A1A] animate-pulse" />
-              <div className="shimmer h-36 rounded bg-[#1A1A1A] animate-pulse" />
+              <div className="h-36 bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 animate-pulse" />
+              <div className="h-36 bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 animate-pulse" />
             </div>
           </div>
         </div>
@@ -149,7 +163,7 @@ export default function AdminOverviewPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-7 space-y-6">
-              <Card hoverEffect={false} padding="md" theme="admin">
+              <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 shadow-lg">
                 <h3 className="font-display text-base font-semibold mb-6 flex items-center gap-2">
                   <TrendingUp size={15} className="text-[#C9A96E]" /> Escrow GMV & Platform Commissions (MTD)
                 </h3>
@@ -166,7 +180,7 @@ export default function AdminOverviewPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" />
                         <XAxis dataKey="date" stroke="#8C8C8C" tick={{ fontSize: 10 }} />
                         <YAxis stroke="#8C8C8C" tick={{ fontSize: 10 }} />
-                        <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid #2A2A2A', color: '#E8E8E8', borderRadius: '8px', fontSize: '12px' }} />
+                        <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid #2A2A2A', color: '#E8E8E8', borderRadius: '12px', fontSize: '12px' }} />
                         <Area type="monotone" name="Revenue (₹)" dataKey="revenue" stroke="#C9A96E" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -174,47 +188,59 @@ export default function AdminOverviewPage() {
                     <div className="h-full flex items-center justify-center text-[#8C8C8C]">No revenue data available</div>
                   )}
                 </div>
-              </Card>
+              </div>
             </div>
 
             <div className="lg:col-span-5 space-y-6">
-              <Card hoverEffect={false} padding="md" theme="admin">
+              <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 shadow-lg">
                 <h3 className="font-display text-sm font-bold mb-4 flex items-center gap-2">
-                  <AlertTriangle size={14} className="text-champagne" /> Alert Prioritization
+                  <AlertTriangle size={14} className="text-[#C9A96E]" /> Alert Prioritization
                 </h3>
                 <div className="space-y-2">
-                  {mockAlerts.map((alert) => (
-                    <div key={alert.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
+                  {mockAlerts.map((alert, idx) => (
+                    <motion.div
+                      key={alert.id}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ ...springTransition, delay: 0.2 + idx * 0.05 }}
+                      className="flex items-start gap-3 p-3 rounded-xl border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] hover:border-[#C9A96E]/20 transition-all duration-300"
+                    >
                       <AlertBadge level={alert.level} />
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] text-[#E8E8E8] leading-relaxed">{alert.message}</p>
-                        <span className="text-[8px] font-mono text-[#8C8C8C]">{alert.time}</span>
+                        <span className="text-[9px] font-mono text-[#8C8C8C] mt-1 block">{alert.time}</span>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-              </Card>
+              </div>
 
-              <Card hoverEffect={false} padding="md" theme="admin">
+              <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6 shadow-lg">
                 <h3 className="font-display text-sm font-bold mb-4 flex items-center gap-2">
-                  <Activity size={14} className="text-champagne" /> Incident Feed
+                  <Activity size={14} className="text-[#C9A96E]" /> Incident Feed
                 </h3>
                 <div className="space-y-2">
-                  {mockIncidents.map((inc) => (
-                    <div key={inc.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
+                  {mockIncidents.map((inc, idx) => (
+                    <motion.div
+                      key={inc.id}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ ...springTransition, delay: 0.3 + idx * 0.05 }}
+                      className="flex items-start gap-3 p-3 rounded-xl border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] hover:border-[#C9A96E]/20 transition-all duration-300"
+                    >
                       <IncidentDot status={inc.status} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-[11px] font-bold text-[#E8E8E8]">{inc.agent}</span>
-                          <span className="text-[8px] font-mono text-[#8C8C8C] uppercase">{inc.status}</span>
+                          <span className="text-[8px] font-mono text-[#8C8C8C] uppercase bg-[#2A2A2A] px-1.5 py-0.5 rounded">{inc.status}</span>
                         </div>
-                        <p className="text-[10px] text-[#E8E8E8]">{inc.event}</p>
-                        <span className="text-[8px] font-mono text-[#8C8C8C]">{inc.time} &middot; {inc.detail}</span>
+                        <p className="text-[11px] text-[#E8E8E8]">{inc.event}</p>
+                        <span className="text-[9px] font-mono text-[#8C8C8C] mt-1 block">{inc.time} &middot; {inc.detail}</span>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-              </Card>
+              </div>
             </div>
           </div>
         </>

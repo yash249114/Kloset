@@ -4,11 +4,18 @@ import React from 'react';
 
 interface SkeletonProps {
   className?: string;
+  variant?: 'default' | 'rounded' | 'circle';
 }
 
-export default function Skeleton({ className = '' }: SkeletonProps) {
+export default function Skeleton({ className = '', variant = 'default' }: SkeletonProps) {
+  const variantClasses = {
+    default: 'rounded-lg',
+    rounded: 'rounded-2xl',
+    circle: 'rounded-full',
+  };
+  
   return (
-    <div className={`shimmer rounded animate-pulse bg-ivory-dark ${className}`} />
+    <div className={`shimmer animate-pulse bg-gradient-to-br from-ivory-dark to-ivory ${variantClasses[variant]} ${className}`} />
   );
 }
 
