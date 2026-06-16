@@ -6,8 +6,8 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Send, MessageSquare, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { sellerSupportAPI } from '@/lib/api';
-import type { SupportTicket } from '@/types';
+import { supportAPI } from '@/lib/api';
+import type { SupportTicket, TicketReplyPayload } from '@/types';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -31,7 +31,7 @@ export default function TicketDetailPage() {
   const loadTicket = async () => {
     setLoading(true);
     try {
-      const data = await sellerSupportAPI.getTicketById(ticketId);
+      const data = await supportAPI.getTicketById(ticketId);
       setTicket(data);
     } catch {
       toast.error('Failed to load ticket details.');
@@ -42,12 +42,12 @@ export default function TicketDetailPage() {
 
   useEffect(() => { loadTicket(); }, [ticketId]);
 
-  const handleReply = async (e: React.FormEvent) => {
+const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim()) return;
     setSending(true);
     try {
-      await sellerSupportAPI.addReply(ticketId, { message: replyText.trim() });
+      await supportAPI.addAgentReply(ticketId, { message: replyText.trim() });
       toast.success('Reply sent.');
       setReplyText('');
       loadTicket();

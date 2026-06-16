@@ -192,7 +192,7 @@ export default function AdminAIOpsPage() {
                   <AlertOctagon size={14} className="text-champagne" /> Active Alerts by Priority
                 </h3>
                 <div className="space-y-2 max-h-56 overflow-y-auto scroll-rail">
-                  {mockAlerts.map((alert) => (
+                  {alerts.map((alert) => (
                     <div key={alert.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
                       <PriorityBadge level={alert.level} />
                       <div className="flex-1 min-w-0">
@@ -213,7 +213,7 @@ export default function AdminAIOpsPage() {
                   <Activity size={14} className="text-champagne" /> Incident Feed
                 </h3>
                 <div className="space-y-2 max-h-56 overflow-y-auto scroll-rail">
-                  {mockIncidents.map((inc) => (
+                  {incidents.map((inc) => (
                     <div key={inc.id} className="flex items-start gap-3 p-2.5 rounded-lg border border-[#2A2A2A] bg-[#131313] hover:bg-[#1A1A1A] transition-colors">
                       <StatusDot status={inc.status} />
                       <div className="flex-1 min-w-0">

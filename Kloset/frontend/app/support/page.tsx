@@ -42,13 +42,9 @@ export default function SupportPage() {
     }
   };
 
-  const loadPublicFaq = () => {
-    setLoading(false);
-  };
-
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      loadPublicFaq();
+      setLoading(false);
       return;
     }
     if (isAuthenticated) {

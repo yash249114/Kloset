@@ -346,17 +346,6 @@ export interface PaginationMeta {
 }
 
 // ─── Admin ───────────────────────────────────────────
-export interface DashboardStats {
-  total_users: number;
-  total_sellers: number;
-  total_renters: number;
-  total_outfits: number;
-  total_bookings: number;
-  total_revenue: number;
-  active_bookings: number;
-  pending_approvals: number;
-}
-
 export interface RevenueData {
   date: string;
   revenue: number;

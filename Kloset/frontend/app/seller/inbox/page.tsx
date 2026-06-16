@@ -39,18 +39,7 @@ export default function SellerInboxPage() {
   };
 
   useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      try {
-        const convs = await messagingAPI.getConversations();
-        setConversations(convs);
-      } catch {
-        setConversations([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
+    loadConversations();
   }, []);
 
   useEffect(() => {

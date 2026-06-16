@@ -22,6 +22,7 @@ import type {
   TicketReply,
   TicketReplyPayload,
   Notification,
+  ReviewResponse,
 } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -457,35 +458,6 @@ export const sellerPayoutAPI = {
   },
 };
 
-// ─── SELLER SUPPORT TICKET ENDPOINTS ──────────────────
-export const sellerSupportAPI = {
-  getMyTickets: async (): Promise<SupportTicket[]> => {
-    const { data } = await client.get<APIResponse<SupportTicket[]>>('/support/tickets');
-    return data.data || [];
-  },
-
-  getTicketById: async (id: string): Promise<SupportTicket> => {
-    const { data } = await client.get<APIResponse<SupportTicket>>(`/support/tickets/${id}`);
-    return data.data!;
-  },
-
-  createTicket: async (payload: {
-    renterName: string;
-    renterEmail: string;
-    subject: string;
-    description: string;
-    priority: string;
-  }): Promise<SupportTicket> => {
-    const { data } = await client.post<APIResponse<SupportTicket>>('/support/tickets', payload);
-    return data.data!;
-  },
-
-  addReply: async (ticketId: string, payload: TicketReplyPayload): Promise<TicketReply> => {
-    const { data } = await client.post<APIResponse<TicketReply>>(`/support/tickets/${ticketId}/reply`, payload);
-    return data.data!;
-  },
-};
-
 // ─── ADMIN ENDPOINTS ─────────────────────────────────
 export interface AdminStats {
   total_users: number;
@@ -756,19 +728,6 @@ export interface CreateReviewPayload {
   photos?: string;
 }
 
-export interface ReviewResponse {
-  id: string;
-  booking_id: string;
-  reviewer_id: string;
-  outfit_id: string;
-  seller_id: string;
-  rating: number;
-  comment?: string;
-  photos?: string;
-  created_at: string;
-  reviewer_name?: string;
-}
-
 export const reviewsAPI = {
   create: async (payload: CreateReviewPayload): Promise<ReviewResponse> => {
     const { data } = await client.post<APIResponse<ReviewResponse>>('/reviews', payload);
@@ -841,6 +800,14 @@ export const supportAPI = {
   },
   getMyTickets: async () => {
     const res = await client.get('/support/tickets');
+    return res.data.data;
+  },
+  getTicketById: async (id: string) => {
+    const res = await client.get(`/support/tickets/${id}`);
+    return res.data.data;
+  },
+  addReply: async (ticketId: string, payload: { message: string }) => {
+    const res = await client.post(`/support/tickets/${ticketId}/reply`, payload);
     return res.data.data;
   },
   getAllTickets: async () => {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, MessageSquare } from 'lucide-react';
 import { reviewsAPI } from '@/lib/api';
-import type { ReviewResponse } from '@/lib/api';
+import type { ReviewResponse } from '@/types';
 import Card from '@/components/ui/Card';
 
 export default function SellerReviewsPage() {
