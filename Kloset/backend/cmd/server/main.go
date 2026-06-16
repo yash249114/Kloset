@@ -84,6 +84,22 @@ func main() {
 		log.Error().Err(err).Msg("GORM database auto-migration failed")
 	}
 
+	// Ensure platform_settings table exists (used by admin without a GORM model)
+	if err := db.Exec(`CREATE TABLE IF NOT EXISTS platform_settings (
+		id UUID PRIMARY KEY,
+		platform_take_rate NUMERIC DEFAULT 5.0,
+		gst_rate NUMERIC DEFAULT 8.0,
+		cleaning_fee NUMERIC DEFAULT 299,
+		min_rental_days INT DEFAULT 1,
+		max_rental_days INT DEFAULT 14,
+		security_deposit_multiplier NUMERIC DEFAULT 2.0,
+		auto_release_days INT DEFAULT 3,
+		created_at TIMESTAMPTZ DEFAULT NOW(),
+		updated_at TIMESTAMPTZ DEFAULT NOW()
+	)`).Error; err != nil {
+		log.Error().Err(err).Msg("Failed to create platform_settings table")
+	}
+
 
 	// Initialize Fiber
 	app := fiber.New(fiber.Config{
