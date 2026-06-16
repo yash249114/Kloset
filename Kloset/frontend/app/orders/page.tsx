@@ -111,7 +111,7 @@ export default function RenterOrdersPage() {
       await bookingsAPI.updateStatus(bookingId, nextStatus);
       toast.success(`Booking status transitioned to: ${nextStatus}`);
       loadOrders();
-    } catch (err) {
+    } catch {
       toast.error('Failed to transition order state.');
     }
   };
@@ -132,7 +132,7 @@ export default function RenterOrdersPage() {
       setComment('');
       setRating(5);
       loadOrders();
-    } catch (err) {
+    } catch {
       toast.error('Failed to submit review. Already reviewed?');
     } finally {
       setSubmittingReview(false);
@@ -159,7 +159,7 @@ export default function RenterOrdersPage() {
       setDisputeReason('');
       setDisputeDesc('');
       loadOrders();
-    } catch (err) {
+    } catch {
       toast.error('Failed to raise dispute ticket.');
     } finally {
       setSubmittingDispute(false);

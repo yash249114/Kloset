@@ -103,7 +103,7 @@ export default function ProfilePage() {
 
         const userAddresses = await userAPI.getAddresses();
         setAddresses(userAddresses);
-      } catch (err) {
+      } catch {
         console.error('Failed to load profile details', err);
         toast.error('Failed to fetch profile settings from API.');
       } finally {
@@ -123,7 +123,7 @@ export default function ProfilePage() {
       const updatedUser = { ...user, ...personalForm };
       setUser(updatedUser);
       toast.success('Personal profile details updated.');
-    } catch (err) {
+    } catch {
       toast.error('Failed to save profile changes.');
     } finally {
       setUpdating(false);
@@ -139,7 +139,7 @@ export default function ProfilePage() {
       const updatedUser = { ...user, ...businessForm };
       setUser(updatedUser);
       toast.success('Bespoke business settings updated.');
-    } catch (err) {
+    } catch {
       toast.error('Failed to save business settings.');
     } finally {
       setUpdating(false);
@@ -166,7 +166,7 @@ export default function ProfilePage() {
         is_default: false,
       });
       toast.success('New delivery dispatch destination created.');
-    } catch (err) {
+    } catch {
       toast.error('Failed to create address registry.');
     } finally {
       setUpdating(false);
@@ -178,7 +178,7 @@ export default function ProfilePage() {
       await userAPI.deleteAddress(id);
       setAddresses(addresses.filter((addr) => addr.id !== id));
       toast.success('Address removed from registry.');
-    } catch (err) {
+    } catch {
       toast.error('Failed to delete address.');
     }
   };
@@ -191,7 +191,7 @@ export default function ProfilePage() {
         is_default: addr.id === id,
       })));
       toast.success('Default delivery destination updated.');
-    } catch (err) {
+    } catch {
       toast.error('Failed to set default address.');
     }
   };
