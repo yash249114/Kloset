@@ -22,12 +22,9 @@ stitch_marketplace/
 .aider*
 .agents/
 
-# Duplicate project root
-Kloset/
-
 # Dev scripts and tests
-scripts/
-tests/
+/scripts/
+/tests/
 test-results/
 public/e2e-report.json
 public/test-results.json
